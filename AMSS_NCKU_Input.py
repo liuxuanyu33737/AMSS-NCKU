@@ -13,10 +13,10 @@ import numpy
 
 ## Setting MPI processes and the output file directory
 
-File_directory   = "GW150914"                    ## output file directory
+File_directory = "baseline_true_20steps"
 Output_directory = "binary_output"               ## binary data file directory
                                                  ## The file directory name should not be too long
-MPI_processes    = 64                             ## number of mpi processes used in the simulation
+MPI_processes = 8
 
 GPU_Calculation  = "no"                          ## Use GPU or not 
                                                  ## (prefer "no" in the current version, because the GPU part may have bugs when integrated in this Python interface)
@@ -45,12 +45,12 @@ Finite_Diffenence_Method = "4th-order"             ## finite-difference method: 
 ## Setting the time evolutionary information
 
 Start_Evolution_Time     = 0.0                    ## start evolution time t0
-Final_Evolution_Time     = 1000.0                 ## final evolution time t1
+Final_Evolution_Time = 1000.0
 Check_Time               = 100.0
 Dump_Time                = 100.0                  ## time inteval dT for dumping binary data
 D2_Dump_Time             = 100.0                  ## dump the ascii data for 2d surface after dT'
 Analysis_Time            = 0.1                    ## dump the puncture position and GW psi4 after dT"
-Evolution_Step_Number    = 10000000               ## stop the calculation after the maximal step number
+Evolution_Step_Number = 20
 Courant_Factor           = 0.5                    ## Courant Factor
 Dissipation              = 0.15                   ## Kreiss-Oliger Dissipation Strength
 
