@@ -1,0 +1,134 @@
+Flat profile:
+
+Each sample counts as 0.01 seconds.
+  %   cumulative   self              self     total           
+ time   seconds   seconds    calls   s/call   s/call  name    
+ 38.76    230.78   230.78     5457     0.04     0.06  compute_rhs_bssn_
+ 27.97    397.29   166.51 2134616664     0.00     0.00  polint_
+  5.93    432.57    35.28   130968     0.00     0.00  lopsided_
+  4.78    461.01    28.44    60027     0.00     0.00  fdderivs_
+  4.61    488.47    27.46   262667     0.00     0.00  prolong3_
+  3.97    512.09    23.62   130968     0.00     0.00  kodis_
+  3.53    533.08    20.99    91237     0.00     0.00  fderivs_
+  2.02    545.13    12.05                             _init
+  1.55    554.37     9.24     5280     0.00     0.00  enforce_ga_
+  1.45    563.02     8.65   126720     0.00     0.00  rungekutta4_rout_
+  1.34    571.00     7.98 49642248     0.00     0.00  polin3_
+  1.26    578.50     7.50   812219     0.00     0.00  symmetry_bd_
+  0.62    582.21     3.71   134432     0.00     0.00  restrict3_
+  0.56    585.56     3.35 49642248     0.00     0.00  decide3d_
+  0.38    587.80     2.24    15936     0.00     0.00  average2_
+  0.23    589.15     1.35 521994240     0.00     0.00  misc::fact(int)
+  0.18    590.21     1.06      240     0.00     0.00  admmass_bssn_
+  0.17    591.21     1.00 49642248     0.00     0.00  global_interp_
+  0.15    592.08     0.87  1677867     0.00     0.00  copy_
+  0.13    592.88     0.80       20     0.04     0.04  getnp4_
+  0.12    593.57     0.69     1760     0.00     0.10  Patch::Interp_Points(MyList<var>*, int, double**, double*, int)
+  0.07    593.96     0.39 46448640     0.00     0.00  misc::Wigner_d_function(int, int, int, double)
+  0.05    594.28     0.32   610416     0.00     0.00  Ansorg::interpolate_tri_bar(double, double, double, int, int, int, double*, double*, double*, double*)
+  0.04    594.53     0.25     5280     0.00     0.00  lowerboundset_
+  0.04    594.75     0.22      240     0.00     0.11  surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*)
+  0.03    594.90     0.15   124800     0.00     0.00  sommerfeld_rout_
+  0.02    595.01     0.11   873804     0.00     0.00  monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)
+  0.01    595.08     0.07     1320     0.00     0.42  bssn_class::Step(int, int)
+  0.01    595.15     0.07     1260     0.00     0.00  l2normhelper_
+  0.01    595.21     0.06    29043     0.00     0.00  Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int)
+  0.01    595.25     0.04     1920     0.00     0.00  sommerfeld_routbam_
+  0.01    595.29     0.04      240     0.00     0.11  surface_integral::surf_MassPAng(double, int, cgh*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, double*, monitor*)
+  0.01    595.33     0.04        9     0.00     0.00  get_ansorg_nbhs_
+  0.01    595.36     0.03   231952     0.00     0.00  Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**)
+  0.00    595.37     0.01   701658     0.00     0.00  Patch::getdX(int)
+  0.00    595.38     0.01   230517     0.00     0.00  Patch::Interp_ONE_Point(MyList<var>*, double*, double*, int)
+  0.00    595.39     0.01    14923     0.00     0.00  Parallel::build_ghost_gsl(Patch*)
+  0.00    595.40     0.01    14923     0.00     0.00  Parallel::Sync(Patch*, MyList<var>*, int)
+  0.00    595.41     0.01     1093     0.00     0.00  Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int)
+  0.00    595.42     0.01      120     0.00     0.00  average_
+  0.00    595.42     0.00 13214167     0.00     0.00  Block::getdX(int)
+  0.00    595.42     0.00  1831248     0.00     0.00  Ansorg::find_point_bisection(double, int, double*, int)
+  0.00    595.42     0.00   610416     0.00     0.00  Ansorg::xyz_to_ABp(double, double, double, double*, double*, double*)
+  0.00    595.42     0.00   610416     0.00     0.00  Ansorg::ps_u_at_xyz(double, double, double)
+  0.00    595.42     0.00   150168     0.00     0.00  Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*)
+  0.00    595.42     0.00   140352     0.00     0.00  Parallel::build_owned_gsl2(Patch*, int)
+  0.00    595.42     0.00   120144     0.00     0.00  Parallel::build_owned_gsl0(Patch*, int)
+  0.00    595.42     0.00    65696     0.00     0.00  Parallel::build_bulk_gsl(Block*, Patch*)
+  0.00    595.42     0.00    42240     0.00     0.00  Block::swapList(MyList<var>*, MyList<var>*, int)
+  0.00    595.42     0.00    35552     0.00     0.00  Parallel::build_owned_gsl4(Patch*, int, int)
+  0.00    595.42     0.00    21821     0.00     0.00  Parallel::build_complete_gsl(Patch*)
+  0.00    595.42     0.00    21000     0.00     0.00  cgh::Interp_One_Point(MyList<var>*, double*, double*, int)
+  0.00    595.42     0.00    19327     0.00     0.00  Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*)
+  0.00    595.42     0.00    19278     0.00     0.00  Parallel::build_buffer_gsl(Patch*)
+  0.00    595.42     0.00     8212     0.00     0.00  Parallel::Sync(MyList<Patch>*, MyList<var>*, int)
+  0.00    595.42     0.00     4355     0.00     0.00  Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int)
+  0.00    595.42     0.00     1939     0.00     0.00  misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&)
+  0.00    595.42     0.00     1406     0.00     0.00  Parallel::Restrict(MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, int)
+  0.00    595.42     0.00     1321     0.00     0.00  setpbh(int, double**, double*, int)
+  0.00    595.42     0.00     1308     0.00     0.01  bssn_class::Constraint_Out()
+  0.00    595.42     0.00     1280     0.00     0.10  Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int)
+  0.00    595.42     0.00     1260     0.00     0.00  Parallel::L2Norm(Patch*, var*)
+  0.00    595.42     0.00      700     0.00     0.00  cgh::Regrid_Onelevel(int, int, int, double**, double**, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, bool, monitor*)
+  0.00    595.42     0.00      640     0.00     0.20  bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int)
+  0.00    595.42     0.00      639     0.00     0.00  misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&, int&, int&)
+  0.00    595.42     0.00      464     0.00     0.00  Block::Block(int, int*, double*, int, int, int, int, int)
+  0.00    595.42     0.00      464     0.00     0.00  Block::~Block()
+  0.00    595.42     0.00      440     0.00     0.00  monitor::writefile(double, int, double*)
+  0.00    595.42     0.00      240     0.00     0.00  monitor::writefile(double, int, double*, double*)
+  0.00    595.42     0.00      167     0.00     0.00  var::var(char const*, int, double, double, double)
+  0.00    595.42     0.00      167     0.00     0.00  var::~var()
+  0.00    595.42     0.00      107     0.00     0.00  Patch::Patch(int, int*, double*, int, bool, int)
+  0.00    595.42     0.00      107     0.00     0.00  Patch::~Patch()
+  0.00    595.42     0.00      107     0.00     0.00  Parallel::partition3(int*, int, int*, int, int*)
+  0.00    595.42     0.00       58     0.00     0.00  cgh::construct_patchlist(int, int)
+  0.00    595.42     0.00       58     0.00     0.00  Parallel::KillBlocks(MyList<Patch>*)
+  0.00    595.42     0.00       58     0.00     0.00  Parallel::distribute(MyList<Patch>*, int, int, int, bool, int)
+  0.00    595.42     0.00       58     0.00     0.00  Parallel::add_ghost_touch(MyList<Parallel::gridseg>*&)
+  0.00    595.42     0.00       58     0.00     0.00  Parallel::cut_gsl(MyList<Parallel::gridseg>*&)
+  0.00    595.42     0.00       58     0.00     0.00  Parallel::merge_gsl(MyList<Parallel::gridseg>*&, double)
+  0.00    595.42     0.00       53     0.00     0.00  Parallel::checkgsl(MyList<Parallel::gridseg>*, bool)
+  0.00    595.42     0.00       49     0.00     0.01  cgh::recompose_cgh_Onelevel(int, int, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool)
+  0.00    595.42     0.00       49     0.00     0.01  Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool)
+  0.00    595.42     0.00       49     0.00     0.00  Parallel::build_complete_gsl_virtual(MyList<Patch>*)
+  0.00    595.42     0.00       49     0.00     0.00  Parallel::cut_gs(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*&)
+  0.00    595.42     0.00       21     0.00     0.03  bssn_class::Interp_Constraint(bool)
+  0.00    595.42     0.00       21     0.00     2.56  bssn_class::Compute_Constraint()
+  0.00    595.42     0.00       21     0.00     0.54  cgh::cgh(int, int, int, char*, int, monitor*)
+  0.00    595.42     0.00       20     0.00     0.05  bssn_class::Compute_Psi4(int)
+  0.00    595.42     0.00       20     0.00    28.04  bssn_class::RecursiveStep(int)
+  0.00    595.42     0.00       20     0.00     0.00  perf::MemoryUsage(unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, int)
+  0.00    595.42     0.00       20     0.00     0.00  perf::sample_mem_usage(int)
+  0.00    595.42     0.00       15     0.00     0.00  var::setpropspeed(double)
+  0.00    595.42     0.00       13     0.00     0.00  Parallel::aligncheck(double*, double*, int, double*, int*)
+  0.00    595.42     0.00       12     0.00     0.00  Patch::checkPatch(bool)
+  0.00    595.42     0.00       12     0.00     0.00  Parallel::Dump_Data(Patch*, MyList<var>*, char*, double, double, int)
+  0.00    595.42     0.00        9     0.00     0.00  Parallel::Dump_Data(MyList<Patch>*, MyList<var>*, char*, double, double)
+  0.00    595.42     0.00        9     0.00     0.00  std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+  0.00    595.42     0.00        7     0.00     0.00  Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, int)
+  0.00    595.42     0.00        5     0.00     0.00  monitor::~monitor()
+  0.00    595.42     0.00        3     0.00     0.00  frame_dummy
+  0.00    595.42     0.00        2     0.00     0.00  checkpoint::addvariablelist(MyList<var>*)
+  0.00    595.42     0.00        2     0.00     0.00  misc::inversearray(double*, int)
+  0.00    595.42     0.00        2     0.00     0.00  std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::~pair()
+  0.00    595.42     0.00        2     0.00     0.00  std::pair<std::_Rb_tree_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, bool> std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::_M_insert_unique<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&&)
+  0.00    595.42     0.00        1     0.00     0.54  bssn_class::Initialize()
+  0.00    595.42     0.00        1     0.00     2.92  bssn_class::Read_Ansorg()
+  0.00    595.42     0.00        1     0.00     0.00  bssn_class::Setup_Black_Hole_position()
+  0.00    595.42     0.00        1     0.00   579.91  bssn_class::Evolve(int)
+  0.00    595.42     0.00        1     0.00     0.00  bssn_class::bssn_class(double, double, double, double, double, double, double, int, int, char*, double, double, double, int, int, int, double, double)
+  0.00    595.42     0.00        1     0.00     0.00  bssn_class::~bssn_class()
+  0.00    595.42     0.00        1     0.00     0.00  checkpoint::checkpoint(bool, char const*, int)
+  0.00    595.42     0.00        1     0.00     0.00  checkpoint::~checkpoint()
+  0.00    595.42     0.00        1     0.00     0.00  surface_integral::surface_integral(int)
+  0.00    595.42     0.00        1     0.00     0.00  surface_integral::~surface_integral()
+  0.00    595.42     0.00        1     0.00     0.00  cgh::compose_cgh(int)
+  0.00    595.42     0.00        1     0.00     0.00  cgh::settrfls(int)
+  0.00    595.42     0.00        1     0.00     0.00  cgh::read_bbox(int, char*)
+  0.00    595.42     0.00        1     0.00     0.00  cgh::sethandle(monitor*)
+  0.00    595.42     0.00        1     0.00     0.00  cgh::~cgh()
+  0.00    595.42     0.00        1     0.00     0.00  misc::gaulegf(double, double, double*, double*, int)
+  0.00    595.42     0.00        1     0.00     0.00  perf::perf()
+  0.00    595.42     0.00        1     0.00     0.00  perf::~perf()
+  0.00    595.42     0.00        1     0.00     0.00  Ansorg::set_ABp()
+  0.00    595.42     0.00        1     0.00     0.00  Ansorg::Ansorg(char*, int)
+  0.00    595.42     0.00        1     0.00     0.00  Ansorg::~Ansorg()
+  0.00    595.42     0.00        1     0.00     0.00  monitor::print_message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)
+  0.00    595.42     0.00        1     0.00     0.00  std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> > >::~map()
+  0.00    595.42     0.00        1     0.00     0.00  std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::pair<char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, true>(char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)

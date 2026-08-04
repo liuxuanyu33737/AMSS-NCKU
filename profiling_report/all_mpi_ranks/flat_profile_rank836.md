@@ -1,0 +1,137 @@
+# MPI 进程 836 的 gprof 性能报告
+
+- 数据文件：`gmon.out.836`
+- 函数数量：129
+- 分析工具：GNU gprof
+
+|排名|占比(%)|累计占比(%)|自身时间(s)|调用次数|函数名称|
+|---:|---:|---:|---:|---:|---|
+|1|42.24|42.24|233.20|5457|`compute_rhs_bssn_`|
+|2|22.41|64.65|123.74|1559775550|`polint_`|
+|3|6.36|71.01|35.13|130968|`lopsided_`|
+|4|5.31|76.32|29.33|60027|`fdderivs_`|
+|5|4.86|81.18|26.85|255590|`prolong3_`|
+|6|4.46|85.64|24.64|130968|`kodis_`|
+|7|3.80|89.44|20.97|91237|`fderivs_`|
+|8|1.77|91.21|9.76||`_init`|
+|9|1.70|92.91|9.37|5280|`enforce_ga_`|
+|10|1.54|94.45|8.52|796872|`symmetry_bd_`|
+|11|1.51|95.96|8.36|126720|`rungekutta4_rout_`|
+|12|1.07|97.03|5.91|36273850|`polin3_`|
+|13|0.77|97.80|4.24|126162|`restrict3_`|
+|14|0.47|98.27|2.59|36273850|`decide3d_`|
+|15|0.43|98.70|2.35|15936|`average2_`|
+|16|0.24|98.94|1.31|521994240|`misc::fact(int)`|
+|17|0.19|99.13|1.07|240|`admmass_bssn_`|
+|18|0.15|99.28|0.82|20|`getnp4_`|
+|19|0.14|99.42|0.76|1760|`Patch::Interp_Points(MyList<var>*, int, double**, double*, int)`|
+|20|0.12|99.54|0.67|1677798|`copy_`|
+|21|0.11|99.65|0.58|36273850|`global_interp_`|
+|22|0.06|99.71|0.34|46448640|`misc::Wigner_d_function(int, int, int, double)`|
+|23|0.05|99.76|0.29|610416|`Ansorg::interpolate_tri_bar(double, double, double, int, int, int, double*, double*, double*, double*)`|
+|24|0.05|99.81|0.29|240|`surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*)`|
+|25|0.04|99.85|0.21|5280|`lowerboundset_`|
+|26|0.03|99.88|0.15|873262|`monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)`|
+|27|0.02|99.90|0.10|124800|`sommerfeld_rout_`|
+|28|0.02|99.92|0.09|1320|`bssn_class::Step(int, int)`|
+|29|0.01|99.93|0.08|29043|`Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int)`|
+|30|0.01|99.94|0.08|240|`surface_integral::surf_MassPAng(double, int, cgh*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, double*, monitor*)`|
+|31|0.01|99.95|0.07|840|`l2normhelper_`|
+|32|0.01|99.96|0.05|9|`get_ansorg_nbhs_`|
+|33|0.00|99.96|0.02|230517|`Patch::Interp_ONE_Point(MyList<var>*, double*, double*, int)`|
+|34|0.00|99.96|0.02|120|`average_`|
+|35|0.00|99.96|0.01|13214167|`Block::getdX(int)`|
+|36|0.00|99.96|0.01|231952|`Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**)`|
+|37|0.00|99.96|0.01|150168|`Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*)`|
+|38|0.00|99.96|0.01|140352|`Parallel::build_owned_gsl2(Patch*, int)`|
+|39|0.00|99.96|0.01|21000|`cgh::Interp_One_Point(MyList<var>*, double*, double*, int)`|
+|40|0.00|99.96|0.01|1920|`sommerfeld_routbam_`|
+|41|0.00|99.96|0.01|1406|`Parallel::Restrict(MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, int)`|
+|42|0.00|99.96|0.01|1093|`Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int)`|
+|43|0.00|99.96|0.01|21|`bssn_class::Compute_Constraint()`|
+|44|0.00|99.96|0.00|1831248|`Ansorg::find_point_bisection(double, int, double*, int)`|
+|45|0.00|99.96|0.00|701658|`Patch::getdX(int)`|
+|46|0.00|99.96|0.00|610416|`Ansorg::xyz_to_ABp(double, double, double, double*, double*, double*)`|
+|47|0.00|99.96|0.00|610416|`Ansorg::ps_u_at_xyz(double, double, double)`|
+|48|0.00|99.96|0.00|120144|`Parallel::build_owned_gsl0(Patch*, int)`|
+|49|0.00|99.96|0.00|65696|`Parallel::build_bulk_gsl(Block*, Patch*)`|
+|50|0.00|99.96|0.00|42240|`Block::swapList(MyList<var>*, MyList<var>*, int)`|
+|51|0.00|99.96|0.00|35552|`Parallel::build_owned_gsl4(Patch*, int, int)`|
+|52|0.00|99.96|0.00|21821|`Parallel::build_complete_gsl(Patch*)`|
+|53|0.00|99.96|0.00|19327|`Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*)`|
+|54|0.00|99.96|0.00|19278|`Parallel::build_buffer_gsl(Patch*)`|
+|55|0.00|99.96|0.00|14923|`Parallel::build_ghost_gsl(Patch*)`|
+|56|0.00|99.96|0.00|14923|`Parallel::Sync(Patch*, MyList<var>*, int)`|
+|57|0.00|99.96|0.00|8212|`Parallel::Sync(MyList<Patch>*, MyList<var>*, int)`|
+|58|0.00|99.96|0.00|4355|`Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int)`|
+|59|0.00|99.96|0.00|1939|`misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&)`|
+|60|0.00|99.96|0.00|1321|`setpbh(int, double**, double*, int)`|
+|61|0.00|99.96|0.00|1308|`bssn_class::Constraint_Out()`|
+|62|0.00|99.96|0.00|1280|`Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int)`|
+|63|0.00|99.96|0.00|1260|`Parallel::L2Norm(Patch*, var*)`|
+|64|0.00|99.96|0.00|700|`cgh::Regrid_Onelevel(int, int, int, double**, double**, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, bool, monitor*)`|
+|65|0.00|99.96|0.00|640|`bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int)`|
+|66|0.00|99.96|0.00|639|`misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&, int&, int&)`|
+|67|0.00|99.96|0.00|464|`Block::Block(int, int*, double*, int, int, int, int, int)`|
+|68|0.00|99.96|0.00|464|`Block::~Block()`|
+|69|0.00|99.96|0.00|440|`monitor::writefile(double, int, double*)`|
+|70|0.00|99.96|0.00|240|`monitor::writefile(double, int, double*, double*)`|
+|71|0.00|99.96|0.00|167|`var::var(char const*, int, double, double, double)`|
+|72|0.00|99.96|0.00|167|`var::~var()`|
+|73|0.00|99.96|0.00|107|`Patch::Patch(int, int*, double*, int, bool, int)`|
+|74|0.00|99.96|0.00|107|`Patch::~Patch()`|
+|75|0.00|99.96|0.00|107|`Parallel::partition3(int*, int, int*, int, int*)`|
+|76|0.00|99.96|0.00|58|`cgh::construct_patchlist(int, int)`|
+|77|0.00|99.96|0.00|58|`Parallel::KillBlocks(MyList<Patch>*)`|
+|78|0.00|99.96|0.00|58|`Parallel::distribute(MyList<Patch>*, int, int, int, bool, int)`|
+|79|0.00|99.96|0.00|58|`Parallel::add_ghost_touch(MyList<Parallel::gridseg>*&)`|
+|80|0.00|99.96|0.00|58|`Parallel::cut_gsl(MyList<Parallel::gridseg>*&)`|
+|81|0.00|99.96|0.00|58|`Parallel::merge_gsl(MyList<Parallel::gridseg>*&, double)`|
+|82|0.00|99.96|0.00|53|`Parallel::checkgsl(MyList<Parallel::gridseg>*, bool)`|
+|83|0.00|99.96|0.00|49|`cgh::recompose_cgh_Onelevel(int, int, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool)`|
+|84|0.00|99.96|0.00|49|`Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool)`|
+|85|0.00|99.96|0.00|49|`Parallel::build_complete_gsl_virtual(MyList<Patch>*)`|
+|86|0.00|99.96|0.00|49|`Parallel::cut_gs(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*&)`|
+|87|0.00|99.96|0.00|21|`bssn_class::Interp_Constraint(bool)`|
+|88|0.00|99.96|0.00|21|`cgh::cgh(int, int, int, char*, int, monitor*)`|
+|89|0.00|99.96|0.00|20|`bssn_class::Compute_Psi4(int)`|
+|90|0.00|99.96|0.00|20|`bssn_class::RecursiveStep(int)`|
+|91|0.00|99.96|0.00|20|`perf::MemoryUsage(unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, int)`|
+|92|0.00|99.96|0.00|20|`perf::sample_mem_usage(int)`|
+|93|0.00|99.96|0.00|15|`var::setpropspeed(double)`|
+|94|0.00|99.96|0.00|13|`Parallel::aligncheck(double*, double*, int, double*, int*)`|
+|95|0.00|99.96|0.00|12|`Patch::checkPatch(bool)`|
+|96|0.00|99.96|0.00|12|`Parallel::Dump_Data(Patch*, MyList<var>*, char*, double, double, int)`|
+|97|0.00|99.96|0.00|9|`Parallel::Dump_Data(MyList<Patch>*, MyList<var>*, char*, double, double)`|
+|98|0.00|99.96|0.00|9|`std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)`|
+|99|0.00|99.96|0.00|7|`Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, int)`|
+|100|0.00|99.96|0.00|5|`monitor::~monitor()`|
+|101|0.00|99.96|0.00|3|`frame_dummy`|
+|102|0.00|99.96|0.00|2|`checkpoint::addvariablelist(MyList<var>*)`|
+|103|0.00|99.96|0.00|2|`misc::inversearray(double*, int)`|
+|104|0.00|99.96|0.00|2|`std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::~pair()`|
+|105|0.00|99.96|0.00|2|`std::pair<std::_Rb_tree_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, bool> std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::_M_insert_unique<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&&)`|
+|106|0.00|99.96|0.00|1|`bssn_class::Initialize()`|
+|107|0.00|99.96|0.00|1|`bssn_class::Read_Ansorg()`|
+|108|0.00|99.96|0.00|1|`bssn_class::Setup_Black_Hole_position()`|
+|109|0.00|99.96|0.00|1|`bssn_class::Evolve(int)`|
+|110|0.00|99.96|0.00|1|`bssn_class::bssn_class(double, double, double, double, double, double, double, int, int, char*, double, double, double, int, int, int, double, double)`|
+|111|0.00|99.96|0.00|1|`bssn_class::~bssn_class()`|
+|112|0.00|99.96|0.00|1|`checkpoint::checkpoint(bool, char const*, int)`|
+|113|0.00|99.96|0.00|1|`checkpoint::~checkpoint()`|
+|114|0.00|99.96|0.00|1|`surface_integral::surface_integral(int)`|
+|115|0.00|99.96|0.00|1|`surface_integral::~surface_integral()`|
+|116|0.00|99.96|0.00|1|`cgh::compose_cgh(int)`|
+|117|0.00|99.96|0.00|1|`cgh::settrfls(int)`|
+|118|0.00|99.96|0.00|1|`cgh::read_bbox(int, char*)`|
+|119|0.00|99.96|0.00|1|`cgh::sethandle(monitor*)`|
+|120|0.00|99.96|0.00|1|`cgh::~cgh()`|
+|121|0.00|99.96|0.00|1|`misc::gaulegf(double, double, double*, double*, int)`|
+|122|0.00|99.96|0.00|1|`perf::perf()`|
+|123|0.00|99.96|0.00|1|`perf::~perf()`|
+|124|0.00|99.96|0.00|1|`Ansorg::set_ABp()`|
+|125|0.00|99.96|0.00|1|`Ansorg::Ansorg(char*, int)`|
+|126|0.00|99.96|0.00|1|`Ansorg::~Ansorg()`|
+|127|0.00|99.96|0.00|1|`monitor::print_message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)`|
+|128|0.00|99.96|0.00|1|`std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> > >::~map()`|
+|129|0.00|99.96|0.00|1|`std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::pair<char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, true>(char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)`|

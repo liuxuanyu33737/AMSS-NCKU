@@ -1,0 +1,132 @@
+﻿排名,8进程总体占比(%),累计总体占比(%),各进程平均占比(%),最小占比(%),最大占比(%),8进程自身时间合计(s),平均每进程自身时间(s),8进程调用次数合计,出现进程数,函数名称
+1,47.468369336246724,47.468369336246724,49.09,38.76,57.61,1813.98,226.7475,43656,8,compute_rhs_bssn_
+2,14.946159180415814,62.414528516662536,12.52,0.0,27.97,571.16,71.395,7234779240,6,polint_
+3,7.271585392979106,69.68611390964165,7.539999999999999,5.93,9.02,277.88,34.735,1047744,8,lopsided_
+4,5.910321998194404,75.59643590783605,6.1225,4.78,7.3,225.86,28.2325,480216,8,fdderivs_
+5,4.933991024349398,80.53042693218545,5.11125,3.97,6.15,188.55,23.56875,1047744,8,kodis_
+6,4.816496356095201,85.34692328828065,4.84875,4.6,5.17,184.06,23.0075,1835158,8,prolong3_
+7,4.377134333826166,89.72405762210681,4.5375000000000005,3.53,5.4,167.26999999999998,20.908749999999998,729896,8,fderivs_
+8,1.885148307579584,91.6092059296864,1.9449999999999998,1.55,2.27,72.03999999999999,9.004999999999999,42240,8,enforce_ga_
+9,1.7574480890761364,93.36665401876253,1.83125,1.37,2.25,67.16,8.395,1013760,8,rungekutta4_rout_
+10,1.5399913645344052,94.90664538329693,1.5762500000000002,1.26,1.8,58.85000000000001,7.356250000000001,6179962,8,symmetry_bd_
+11,1.4327022465294592,96.33934762982639,1.3237500000000002,0.73,2.02,54.75,6.84375,0,8,_init
+12,0.753117272239595,97.09246490206598,0.77125,0.62,0.87,28.779999999999998,3.5974999999999997,1023844,8,restrict3_
+13,0.7225006214918424,97.81496552355783,0.6062500000000001,0.0,1.34,27.61,3.45125,168250680,5,polin3_
+14,0.4576796765625614,98.2726452001204,0.4700000000000001,0.38,0.56,17.49,2.18625,127488,8,average2_
+15,0.30014784963822644,98.57279304975862,0.2525,0.0,0.56,11.47,1.43375,168250680,6,decide3d_
+16,0.28052179146659,98.8533148412252,0.2925,0.22,0.44,10.72,1.34,4175953920,8,misc::fact(int)
+17,0.20960630127307708,99.06292114249828,0.21499999999999997,0.18,0.26,8.010000000000002,1.0012500000000002,1920,8,admmass_bssn_
+18,0.17087754648104783,99.23379868897933,0.175,0.12,0.2,6.53,0.81625,12807698,8,copy_
+19,0.1609336770074187,99.39473236598675,0.16625,0.13,0.2,6.15,0.76875,160,8,getnp4_
+20,0.10624239490245851,99.5009747608892,0.10375,0.08,0.14,4.06,0.5075,14080,8,"Patch::Interp_Points(MyList<var>*, int, double**, double*, int)"
+21,0.08347616742336028,99.58445092831256,0.07125000000000001,0.0,0.17,3.1900000000000004,0.39875000000000005,168250680,4,global_interp_
+22,0.0714388517447566,99.65588978005732,0.075,0.05,0.11,2.73,0.34125,371589120,8,"misc::Wigner_d_function(int, int, int, double)"
+23,0.06542019390545475,99.72130997396278,0.06874999999999999,0.04,0.11,2.5,0.3125,1920,8,"surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*)"
+24,0.06070993994426202,99.78201991390704,0.06,0.05,0.07,2.3200000000000003,0.29000000000000004,4694328,8,"Ansorg::interpolate_tri_bar(double, double, double, int, int, int, double*, double*, double*, double*)"
+25,0.052597835899985616,99.83461774980702,0.0525,0.04,0.08,2.01,0.25125,42240,8,lowerboundset_
+26,0.023551269805963712,99.85816901961299,0.02625,0.01,0.04,0.9,0.1125,998400,8,sommerfeld_rout_
+27,0.023027908254720075,99.8811969278677,0.02375,0.01,0.03,0.88,0.11,6969926,8,"monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)"
+28,0.02145782360098916,99.90265475146869,0.0225,0.01,0.03,0.82,0.1025,232344,8,"Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int)"
+29,0.016747569639796414,99.91940232110848,0.01875,0.01,0.03,0.6399999999999999,0.07999999999999999,10560,8,"bssn_class::Step(int, int)"
+30,0.01386908110795641,99.93327140221643,0.013750000000000002,0.01,0.02,0.53,0.06625,8400,8,l2normhelper_
+31,0.01386908110795641,99.94714048332439,0.0175,0.0,0.03,0.53,0.06625,15360,8,sommerfeld_routbam_
+32,0.012298996454225495,99.95943947977861,0.01375,0.01,0.02,0.47000000000000003,0.058750000000000004,1920,8,"surface_integral::surf_MassPAng(double, int, cgh*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, double*, monitor*)"
+33,0.008373784819898207,99.9678132645985,0.01,0.01,0.01,0.31999999999999995,0.039999999999999994,72,8,get_ansorg_nbhs_
+34,0.004448573185570924,99.97226183778407,0.00625,0.0,0.01,0.17,0.02125,960,8,average_
+35,0.0036635308587054656,99.97592536864278,0.00625,0.0,0.01,0.13999999999999999,0.017499999999999998,1855616,7,"Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**)"
+36,0.0031401693074618276,99.97906553795023,0.0025,0.0,0.01,0.12,0.015,105716144,7,Block::getdX(int)
+37,0.0026168077562181906,99.98168234570645,0.0025,0.0,0.01,0.1,0.0125,119384,5,"Parallel::Sync(Patch*, MyList<var>*, int)"
+38,0.0023551269805963714,99.98403747268705,0.0025,0.0,0.01,0.09,0.01125,8744,6,"Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int)"
+39,0.002093446204974552,99.98613091889203,0.0025,0.0,0.01,0.08,0.01,1201344,5,"Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*)"
+40,0.0018317654293527328,99.98796268432139,0.0025,0.0,0.01,0.06999999999999999,0.008749999999999999,14082984,3,"Ansorg::find_point_bisection(double, int, double*, int)"
+41,0.0018317654293527328,99.98979444975075,0.00125,0.0,0.01,0.06999999999999999,0.008749999999999999,1844136,5,"Patch::Interp_ONE_Point(MyList<var>*, double*, double*, int)"
+42,0.001046723102487276,99.99084117285324,0.0,0.0,0.0,0.04,0.005,337920,3,"Block::swapList(MyList<var>*, MyList<var>*, int)"
+43,0.001046723102487276,99.99188789595573,0.00125,0.0,0.01,0.04,0.005,119384,3,Parallel::build_ghost_gsl(Patch*)
+44,0.001046723102487276,99.99293461905822,0.00125,0.0,0.01,0.04,0.005,1122816,3,"Parallel::build_owned_gsl2(Patch*, int)"
+45,0.0007850423268654569,99.99371966138509,0.0,0.0,0.0,0.03,0.00375,11248,3,"Parallel::Restrict(MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, int)"
+46,0.0007850423268654569,99.99450470371195,0.0,0.0,0.0,0.03,0.00375,65696,3,"Parallel::Sync(MyList<Patch>*, MyList<var>*, int)"
+47,0.0007850423268654569,99.99528974603882,0.0,0.0,0.0,0.03,0.00375,168000,3,"cgh::Interp_One_Point(MyList<var>*, double*, double*, int)"
+48,0.000523361551243638,99.99581310759007,0.0,0.0,0.0,0.02,0.0025,4694328,2,"Ansorg::ps_u_at_xyz(double, double, double)"
+49,0.000523361551243638,99.99633646914131,0.0,0.0,0.0,0.02,0.0025,525568,2,"Parallel::build_bulk_gsl(Block*, Patch*)"
+50,0.000523361551243638,99.99685983069256,0.0,0.0,0.0,0.02,0.0025,174568,2,Parallel::build_complete_gsl(Patch*)
+51,0.000523361551243638,99.9973831922438,0.00125,0.0,0.01,0.02,0.0025,154616,1,"Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*)"
+52,0.000523361551243638,99.99790655379505,0.0,0.0,0.0,0.02,0.0025,10464,2,bssn_class::Constraint_Out()
+53,0.000261680775621819,99.99816823457067,0.0,0.0,0.0,0.01,0.00125,4694328,1,"Ansorg::xyz_to_ABp(double, double, double, double*, double*, double*)"
+54,0.000261680775621819,99.99842991534629,0.0,0.0,0.0,0.01,0.00125,96,1,"Parallel::Dump_Data(Patch*, MyList<var>*, char*, double, double, int)"
+55,0.000261680775621819,99.99869159612192,0.0,0.0,0.0,0.01,0.00125,154224,1,Parallel::build_buffer_gsl(Patch*)
+56,0.000261680775621819,99.99895327689754,0.0,0.0,0.0,0.01,0.00125,961152,1,"Parallel::build_owned_gsl0(Patch*, int)"
+57,0.000261680775621819,99.99921495767316,0.0,0.0,0.0,0.01,0.00125,284416,1,"Parallel::build_owned_gsl4(Patch*, int, int)"
+58,0.000261680775621819,99.99947663844878,0.0,0.0,0.0,0.01,0.00125,5613372,1,Patch::getdX(int)
+59,0.000261680775621819,99.9997383192244,0.0,0.0,0.0,0.01,0.00125,168,1,bssn_class::Compute_Constraint()
+60,0.000261680775621819,100.00000000000003,0.0,0.0,0.0,0.01,0.00125,160,1,bssn_class::RecursiveStep(int)
+61,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"Ansorg::Ansorg(char*, int)"
+62,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,Ansorg::set_ABp()
+63,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,Ansorg::~Ansorg()
+64,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,3712,0,"Block::Block(int, int*, double*, int, int, int, int, int)"
+65,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,3712,0,Block::~Block()
+66,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,72,0,"Parallel::Dump_Data(MyList<Patch>*, MyList<var>*, char*, double, double)"
+67,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,464,0,Parallel::KillBlocks(MyList<Patch>*)
+68,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,10080,0,"Parallel::L2Norm(Patch*, var*)"
+69,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,34840,0,"Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int)"
+70,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,10240,0,"Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int)"
+71,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,464,0,Parallel::add_ghost_touch(MyList<Parallel::gridseg>*&)
+72,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,104,0,"Parallel::aligncheck(double*, double*, int, double*, int*)"
+73,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,392,0,Parallel::build_complete_gsl_virtual(MyList<Patch>*)
+74,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,424,0,"Parallel::checkgsl(MyList<Parallel::gridseg>*, bool)"
+75,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,392,0,"Parallel::cut_gs(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*&)"
+76,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,464,0,Parallel::cut_gsl(MyList<Parallel::gridseg>*&)
+77,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,464,0,"Parallel::distribute(MyList<Patch>*, int, int, int, bool, int)"
+78,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,392,0,"Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool)"
+79,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,464,0,"Parallel::merge_gsl(MyList<Parallel::gridseg>*&, double)"
+80,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,856,0,"Parallel::partition3(int*, int, int*, int, int*)"
+81,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,56,0,"Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, int)"
+82,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,156,0,"Parallel::writefile(double, int, int, int, double, double, double, double, double, double, char*, double*)"
+83,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,856,0,"Patch::Patch(int, int*, double*, int, bool, int)"
+84,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,96,0,Patch::checkPatch(bool)
+85,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,856,0,Patch::~Patch()
+86,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,160,0,bssn_class::Compute_Psi4(int)
+87,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,bssn_class::Evolve(int)
+88,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,bssn_class::Initialize()
+89,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,168,0,bssn_class::Interp_Constraint(bool)
+90,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,bssn_class::Read_Ansorg()
+91,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,bssn_class::Setup_Black_Hole_position()
+92,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"bssn_class::bssn_class(double, double, double, double, double, double, double, int, int, char*, double, double, double, int, int, int, double, double)"
+93,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,20,0,bssn_class::check_Stdin_Abort()
+94,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,5120,0,"bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int)"
+95,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,bssn_class::~bssn_class()
+96,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,5600,0,"cgh::Regrid_Onelevel(int, int, int, double**, double**, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, bool, monitor*)"
+97,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,168,0,"cgh::cgh(int, int, int, char*, int, monitor*)"
+98,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,cgh::compose_cgh(int)
+99,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,464,0,"cgh::construct_patchlist(int, int)"
+100,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"cgh::read_bbox(int, char*)"
+101,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,392,0,"cgh::recompose_cgh_Onelevel(int, int, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool)"
+102,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,cgh::sethandle(monitor*)
+103,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,cgh::settrfls(int)
+104,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,cgh::~cgh()
+105,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,16,0,checkpoint::addvariablelist(MyList<var>*)
+106,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"checkpoint::checkpoint(bool, char const*, int)"
+107,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,checkpoint::~checkpoint()
+108,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,86,0,frame_dummy
+109,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"misc::gaulegf(double, double, double*, double*, int)"
+110,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,16,0,"misc::inversearray(double*, int)"
+111,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,15512,0,"misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&)"
+112,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,5112,0,"misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&, int&, int&)"
+113,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"monitor::print_message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >)"
+114,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,3520,0,"monitor::writefile(double, int, double*)"
+115,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,1920,0,"monitor::writefile(double, int, double*, double*)"
+116,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,40,0,monitor::~monitor()
+117,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,160,0,"perf::MemoryUsage(unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, int)"
+118,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,perf::perf()
+119,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,160,0,perf::sample_mem_usage(int)
+120,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,perf::~perf()
+121,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,10568,0,"setpbh(int, double**, double*, int)"
+122,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,78,0,"std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)"
+123,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> > >::~map()"
+124,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,16,0,"std::pair<std::_Rb_tree_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, bool> std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::_M_insert_unique<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&&)"
+125,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,"std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::pair<char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, true>(char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)"
+126,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,16,0,"std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::~pair()"
+127,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,surface_integral::surface_integral(int)
+128,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,8,0,surface_integral::~surface_integral()
+129,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,120,0,var::setpropspeed(double)
+130,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,1336,0,"var::var(char const*, int, double, double, double)"
+131,0.0,100.00000000000003,0.0,0.0,0.0,0.0,0.0,1336,0,var::~var()
