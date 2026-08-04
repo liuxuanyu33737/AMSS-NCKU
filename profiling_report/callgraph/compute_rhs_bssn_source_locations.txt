@@ -1,0 +1,80 @@
+AMSS_NCKU_source/Z4c_class.C:2728:            f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_rhs.f90:10:  function compute_rhs_bssn_escalar(ex, T,X, Y, Z,                             &
+AMSS_NCKU_source/bssnEScalar_rhs.f90:1008:  end function compute_rhs_bssn_escalar
+AMSS_NCKU_source/bssnEScalar_rhs.f90:1010:  function compute_rhs_bssn_escalar_ss(ex, T,crho,sigma,R,x,y,z,               &
+AMSS_NCKU_source/bssnEScalar_rhs.f90:2260:  end function compute_rhs_bssn_escalar_ss
+AMSS_NCKU_source/bssnEM_class.C:877:            f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEM_class.C:1062:              f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEM_class.C:1333:              f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEM_class.C:1520:                f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEM_class.C:2188:                f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_rhs.h:6:#define f_compute_rhs_bssn compute_rhs_bssn
+AMSS_NCKU_source/bssn_rhs.h:7:#define f_compute_rhs_bssn_ss compute_rhs_bssn_ss
+AMSS_NCKU_source/bssn_rhs.h:8:#define f_compute_rhs_bssn_escalar compute_rhs_bssn_escalar
+AMSS_NCKU_source/bssn_rhs.h:9:#define f_compute_rhs_bssn_escalar_ss compute_rhs_bssn_escalar_ss
+AMSS_NCKU_source/bssn_rhs.h:16:#define f_compute_rhs_bssn COMPUTE_RHS_BSSN
+AMSS_NCKU_source/bssn_rhs.h:17:#define f_compute_rhs_bssn_ss COMPUTE_RHS_BSSN_SS
+AMSS_NCKU_source/bssn_rhs.h:18:#define f_compute_rhs_bssn_escalar COMPUTE_RHS_BSSN_ESCALAR
+AMSS_NCKU_source/bssn_rhs.h:19:#define f_compute_rhs_bssn_escalar_ss COMPUTE_RHS_BSSN_ESCALAR_SS
+AMSS_NCKU_source/bssn_rhs.h:26:#define f_compute_rhs_bssn compute_rhs_bssn_
+AMSS_NCKU_source/bssn_rhs.h:27:#define f_compute_rhs_bssn_ss compute_rhs_bssn_ss_
+AMSS_NCKU_source/bssn_rhs.h:28:#define f_compute_rhs_bssn_escalar compute_rhs_bssn_escalar_
+AMSS_NCKU_source/bssn_rhs.h:29:#define f_compute_rhs_bssn_escalar_ss compute_rhs_bssn_escalar_ss_
+AMSS_NCKU_source/bssn_rhs.h:37:        int f_compute_rhs_bssn(int *, double &, double *, double *, double *,                                                      // ex,T,X,Y,Z
+AMSS_NCKU_source/bssn_rhs.h:59:        int f_compute_rhs_bssn_ss(int *, double &, double *, double *, double *,                                                      // ex,T,rho,sigma,R
+AMSS_NCKU_source/bssn_rhs.h:88:        int f_compute_rhs_bssn_escalar(int *, double &, double *, double *, double *,                                                      // ex,T,X,Y,Z
+AMSS_NCKU_source/bssn_rhs.h:112:        int f_compute_rhs_bssn_escalar_ss(int *, double &, double *, double *, double *,                                                      // ex,T,rho,sigma,R
+AMSS_NCKU_source/bssn_gpu_class.C:2641:        if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:2786:          if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:3013:          if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:3169:            if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:3535:        if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:3664:          if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:3885:          if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:4024:            if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:4426:        if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:4626:          if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:4950:          if (f_compute_rhs_bssn_ss(RHS_PARA_CALLED_FIRST_TIME))
+AMSS_NCKU_source/bssn_gpu_class.C:4964:        if (f_compute_rhs_bssn_ss(RHS_PARA_CALLED_FIRST_TIME))
+AMSS_NCKU_source/bssn_gpu_class.C:5099:              if (f_compute_rhs_bssn_ss(RHS_PARA_CALLED_THEN))
+AMSS_NCKU_source/bssn_gpu_class.C:5113:            if (f_compute_rhs_bssn_ss(RHS_PARA_CALLED_THEN))
+AMSS_NCKU_source/bssn_gpu_class.C:6848:                f_compute_rhs_bssn(RHS_PARA_CALLED_Constraint_Out);
+AMSS_NCKU_source/bssn_gpu_class.C:6850:              f_compute_rhs_bssn(RHS_PARA_CALLED_Constraint_Out);
+AMSS_NCKU_source/bssn_gpu_class.C:6884:              f_compute_rhs_bssn_ss(RHS_PARA_CALLED_Constraint_Out_SS);
+AMSS_NCKU_source/bssn_gpu_class.C:6886:            f_compute_rhs_bssn_ss(RHS_PARA_CALLED_Constraint_Out_SS);
+AMSS_NCKU_source/bssn_gpu_class.C:7257:                f_compute_rhs_bssn(RHS_PARA_CALLED_Interp_Constraint);
+AMSS_NCKU_source/bssn_gpu_class.C:7259:              f_compute_rhs_bssn(RHS_PARA_CALLED_Interp_Constraint);
+AMSS_NCKU_source/bssn_gpu_class.C:7293:              f_compute_rhs_bssn_ss(RHS_PARA_CALLED_Intrp_Constraint_Out_SS);
+AMSS_NCKU_source/bssn_gpu_class.C:7295:            f_compute_rhs_bssn_ss(RHS_PARA_CALLED_Intrp_Constraint_Out_SS);
+AMSS_NCKU_source/bssn_gpu_class.C:7431:            f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_gpu_class.C:7493:          f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_class.C:742:        if (f_compute_rhs_bssn_escalar(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_class.C:871:          if (f_compute_rhs_bssn_escalar_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_class.C:1084:          if (f_compute_rhs_bssn_escalar(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_class.C:1225:            if (f_compute_rhs_bssn_escalar_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_class.C:1861:              f_compute_rhs_bssn_escalar(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssnEScalar_class.C:2081:                f_compute_rhs_bssn_escalar(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_rhs.f90:5:  function compute_rhs_bssn(ex, T,X, Y, Z,                                     &
+AMSS_NCKU_source/bssn_rhs.f90:1186:  end function compute_rhs_bssn
+AMSS_NCKU_source/bssn_class.C:3056:        if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:3199:          if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:3427:          if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:3579:            if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:3948:        if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:4076:          if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:4296:          if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:4436:            if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:4838:        if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:5034:          if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:5339:        if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:5515:            if (f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:7318:              f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:7379:            f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:7821:              f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:7882:            f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:8079:            f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_class.C:8141:          f_compute_rhs_bssn_ss(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
+AMSS_NCKU_source/bssn_rhs_ss.f90:5:  function compute_rhs_bssn_ss(ex, T,crho,sigma,R,x,y,z,                       &
+AMSS_NCKU_source/bssn_rhs_ss.f90:1358:  end function compute_rhs_bssn_ss
+AMSS_NCKU_source/gpu_mem.h:66:// 1-----for compute_rhs_bssn---------
+AMSS_NCKU_source/gpu_rhsSS_mem.h:110://1-----for compute_rhs_bssn---------

@@ -1,0 +1,310 @@
+26-                0.00    0.03       1/21          bssn_class::Interp_Constraint(bool) [44]
+27-                0.00    0.02      20/700         cgh::Regrid_Onelevel(int, int, int, double**, double**, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, bool, monitor*) [39]
+28-                0.00    0.00      20/20          perf::MemoryUsage(unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, int) [452]
+29-                0.00    0.00      20/20          bssn_class::check_Stdin_Abort() [451]
+30-                0.00    0.00       1/1           perf::perf() [475]
+31-                0.00    0.00       1/1           cgh::settrfls(int) [470]
+32-                0.00    0.00       1/1           perf::~perf() [476]
+33------------------------------------------------
+34-                                 660             bssn_class::RecursiveStep(int) [3]
+35-                0.00  369.11      20/20          bssn_class::Evolve(int) [2]
+36-[3]     94.9    0.00  369.11      20+660     bssn_class::RecursiveStep(int) [3]
+37-                0.12  354.82    1300/1320        bssn_class::Step(int, int) [4]
+38-                0.00   10.04    1300/1308        bssn_class::Constraint_Out() [17]
+39-                0.00    3.58    1300/8212        Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+40-                0.00    0.55     680/700         cgh::Regrid_Onelevel(int, int, int, double**, double**, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, bool, monitor*) [39]
+41-                                 660             bssn_class::RecursiveStep(int) [3]
+42------------------------------------------------
+43-                0.00    5.46      20/1320        bssn_class::Evolve(int) [2]
+44-                0.12  354.82    1300/1320        bssn_class::RecursiveStep(int) [3]
+45-[4]     92.6    0.12  360.28    1320         bssn_class::Step(int, int) [4]
+46:              215.54  107.42    5280/5457        compute_rhs_bssn_ [5]
+47-                0.00   14.54    5280/8212        Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+48-                8.83    0.00    5280/5280        enforce_ga_ [18]
+49-                8.77    0.00  126720/126720      rungekutta4_rout_ [19]
+50-                0.00    4.34      20/21          bssn_class::Compute_Constraint() [24]
+51-                0.00    0.39     640/640         bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int) [47]
+52-                0.21    0.00    5280/5280        lowerboundset_ [51]
+53-                0.10    0.02    1920/1920        sommerfeld_routbam_ [54]
+54-                0.11    0.00  124800/124800      sommerfeld_rout_ [55]
+55-                0.01    0.00   42240/42240       Block::swapList(MyList<var>*, MyList<var>*, int) [68]
+56-                0.00    0.00    1320/1321        setpbh(int, double**, double*, int) [432]
+57------------------------------------------------
+58-                0.33    0.16       8/5457        bssn_class::Interp_Constraint(bool) [44]
+59-                0.37    0.18       9/5457        bssn_class::Compute_Constraint() [24]
+60-                6.53    3.26     160/5457        cgh::cgh(int, int, int, char*, int, monitor*) [16]
+61-              215.54  107.42    5280/5457        bssn_class::Step(int, int) [4]
+62:[5]     85.8  222.77  111.02    5457         compute_rhs_bssn_ [5]
+63-               35.09    1.22  130968/130968      lopsided_ [6]
+64-               28.23    0.56   60027/60027       fdderivs_ [7]
+65-               23.31    1.22  130968/130968      kodis_ [9]
+66-               20.56    0.84   90837/91237       fderivs_ [12]
+67------------------------------------------------
+68:               35.09    1.22  130968/130968      compute_rhs_bssn_ [5]
+69-[6]      9.3   35.09    1.22  130968         lopsided_ [6]
+70-                1.22    0.00  130968/744441      symmetry_bd_ [22]
+71------------------------------------------------
+72:               28.23    0.56   60027/60027       compute_rhs_bssn_ [5]
+73-[7]      7.4   28.23    0.56   60027         fdderivs_ [7]
+74-                0.56    0.00   60027/744441      symmetry_bd_ [22]
+75------------------------------------------------
+76-                0.00    0.00       5/869188      bssn_class::bssn_class(double, double, double, double, double, double, double, int, int, char*, double, double, double, int, int, int, double, double) [74]
+77-                0.00    0.00      49/869188      Parallel::add_ghost_touch(MyList<Parallel::gridseg>*&) [71]
+78-                0.00    0.00     156/869188      Parallel::Dump_Data(Patch*, MyList<var>*, char*, double, double, int) [64]
+79-                0.00    0.60   19551/869188      Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [20]
+80-                0.05   11.60  379466/869188      Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [15]
+81-                0.06   14.37  469961/869188      Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int) [13]
+82-[8]      6.9    0.11   26.58  869188         monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [8]
+83-               19.88    1.89  203393/203393      prolong3_ [11]
+84-                3.35    1.17  125928/125928      restrict3_ [25]
+85-                0.29    0.00  588438/1504474     copy_ [37]
+86-                0.00    0.00       5/15          std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) [455]
+87------------------------------------------------
+88:               23.31    1.22  130968/130968      compute_rhs_bssn_ [5]
+89-[9]      6.3   23.31    1.22  130968         kodis_ [9]
+90-                1.22    0.00  130968/744441      symmetry_bd_ [22]
+91------------------------------------------------
+92-                0.00    0.02       9/8212        bssn_class::Interp_Constraint(bool) [44]
+93-                0.00    0.05      17/8212        bssn_class::Compute_Constraint() [24]
+94-                0.00    0.06      20/8212        bssn_class::Compute_Psi4(int) [35]
+95-                0.00    0.27      98/8212        Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool) [41]
+96-                0.00    0.50     180/8212        cgh::cgh(int, int, int, char*, int, monitor*) [16]
+97-                0.00    3.58    1300/8212        bssn_class::RecursiveStep(int) [3]
+98-                0.00    3.60    1308/8212        bssn_class::Constraint_Out() [17]
+99-                0.00   14.54    5280/8212        bssn_class::Step(int, int) [4]
+100-[10]     5.8    0.00   22.61    8212         Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+101-                0.00   12.82   14923/14923       Parallel::Sync(Patch*, MyList<var>*, int) [14]
+102-                0.00    5.54   14923/19278       Parallel::build_buffer_gsl(Patch*) [21]
+103-                0.03    4.21    8212/29043       Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int) [13]
+104-                0.01    0.00   65696/231952      Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**) [59]
+105-                0.00    0.00  119384/140352      Parallel::build_owned_gsl2(Patch*, int) [73]
+106------------------------------------------------
+107-               19.88    1.89  203393/203393      monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [8]
+108-[11]     5.6   19.88    1.89  203393         prolong3_ [11]
+109-                1.89    0.00  203393/744441      symmetry_bd_ [22]
+110------------------------------------------------
+111-                0.04    0.00     160/91237       getnp4_ [36]
+112-                0.05    0.00     240/91237       admmass_bssn_ [34]
+113:               20.56    0.84   90837/91237       compute_rhs_bssn_ [5]
+114-[12]     5.5   20.65    0.85   91237         fderivs_ [12]
+115-                0.85    0.00   91237/744441      symmetry_bd_ [22]
+116------------------------------------------------
+117-                0.00    0.08     147/29043       Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool) [41]
+118-                0.00    0.72    1406/29043       Parallel::Restrict(MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, int) [38]
+119-                0.01    2.23    4355/29043       Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int) [26]
+120-                0.03    4.21    8212/29043       Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+121-                0.05    7.65   14923/29043       Parallel::Sync(Patch*, MyList<var>*, int) [14]
+122-[13]     3.8    0.10   14.88   29043         Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int) [13]
+123-                0.06   14.37  469961/869188      monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [8]
+124-                0.45    0.00  915100/1504474     copy_ [37]
+125------------------------------------------------
+126-                0.00   12.82   14923/14923       Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+127-[14]     3.3    0.00   12.82   14923         Parallel::Sync(Patch*, MyList<var>*, int) [14]
+128-                0.05    7.65   14923/29043       Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int) [13]
+129-                0.00    5.11   14923/14923       Parallel::build_ghost_gsl(Patch*) [23]
+130-                0.01    0.00  119384/231952      Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**) [59]
+131-                0.00    0.00  119384/120144      Parallel::build_owned_gsl0(Patch*, int) [75]
+132------------------------------------------------
+133-                0.00    5.10   65696/150168      Parallel::build_ghost_gsl(Patch*) [23]
+134-                0.01    6.55   84472/150168      Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [20]
+135-[15]     3.0    0.01   11.65  150168         Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [15]
+136-                0.05   11.60  379466/869188      monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [8]
+137-                0.00    0.00  647592/13216975     Block::getdX(int) [69]
+138------------------------------------------------
+139-                0.00    0.52       1/21          bssn_class::Initialize() [45]
+140-                0.00   10.33      20/21          bssn_class::Evolve(int) [2]
+141-[16]     2.8    0.00   10.84      21         cgh::cgh(int, int, int, char*, int, monitor*) [16]
+142:                6.53    3.26     160/5457        compute_rhs_bssn_ [5]
+143-                0.00    0.50      20/21          bssn_class::Interp_Constraint(bool) [44]
+144-                0.00    0.50     180/8212        Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+145-                0.00    0.06    1260/1260        Parallel::L2Norm(Patch*, var*) [57]
+146-                0.00    0.00       9/58          cgh::construct_patchlist(int, int) [70]
+147-                0.00    0.00     180/440         monitor::writefile(double, int, double*) [436]
+148-                0.00    0.00       1/1           cgh::sethandle(monitor*) [472]
+149-                0.00    0.00       1/1           cgh::read_bbox(int, char*) [471]
+150------------------------------------------------
+151-                0.00    0.06       8/1308        bssn_class::Compute_Constraint() [24]
+152-                0.00   10.04    1300/1308        bssn_class::RecursiveStep(int) [3]
+153-[17]     2.6    0.00   10.10    1308         bssn_class::Constraint_Out() [17]
+154-                0.00    3.87    4355/4355        Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int) [26]
+155-                0.00    3.60    1308/8212        Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+156-                0.02    1.91    1093/1093        Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int) [29]
+157-                0.01    0.68    1308/1406        Parallel::Restrict(MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, int) [38]
+158-                0.00    0.02       7/7           Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, int) [63]
+159------------------------------------------------
+160-                8.83    0.00    5280/5280        bssn_class::Step(int, int) [4]
+161-[18]     2.3    8.83    0.00    5280         enforce_ga_ [18]
+162------------------------------------------------
+163-                8.77    0.00  126720/126720      bssn_class::Step(int, int) [4]
+164-[19]     2.3    8.77    0.00  126720         rungekutta4_rout_ [19]
+165------------------------------------------------
+166-                0.00    0.02      49/19327       Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool) [41]
+167-                0.02    7.14   19278/19327       Parallel::build_buffer_gsl(Patch*) [21]
+168-[20]     1.8    0.02    7.16   19327         Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [20]
+169-                0.01    6.55   84472/150168      Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [15]
+170-                0.00    0.60   19551/869188      monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [8]
+171------------------------------------------------
+172-                0.00    1.62    4355/19278       Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int) [26]
+173-                0.00    5.54   14923/19278       Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+174-[21]     1.8    0.00    7.16   19278         Parallel::build_buffer_gsl(Patch*) [21]
+175-                0.02    7.14   19278/19327       Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [20]
+176-                0.00    0.00  783726/13216975     Block::getdX(int) [69]
+177-                0.00    0.00   19278/21821       Parallel::build_complete_gsl(Patch*) [430]
+--
+179-                0.02    0.00    1920/744441      sommerfeld_routbam_ [54]
+180-                0.56    0.00   60027/744441      fdderivs_ [7]
+181-                0.85    0.00   91237/744441      fderivs_ [12]
+182-                1.17    0.00  125928/744441      restrict3_ [25]
+183-                1.22    0.00  130968/744441      kodis_ [9]
+184-                1.22    0.00  130968/744441      lopsided_ [6]
+185-                1.89    0.00  203393/744441      prolong3_ [11]
+186-[22]     1.8    6.91    0.00  744441         symmetry_bd_ [22]
+187------------------------------------------------
+188-                0.00    5.11   14923/14923       Parallel::Sync(Patch*, MyList<var>*, int) [14]
+189-[23]     1.3    0.00    5.11   14923         Parallel::build_ghost_gsl(Patch*) [23]
+190-                0.00    5.10   65696/150168      Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [15]
+191-                0.01    0.00   65696/65696       Parallel::build_bulk_gsl(Block*, Patch*) [67]
+192------------------------------------------------
+193-                0.00    0.22       1/21          bssn_class::Read_Ansorg() [42]
+194-                0.00    4.34      20/21          bssn_class::Step(int, int) [4]
+195-[24]     1.2    0.00    4.56      21         bssn_class::Compute_Constraint() [24]
+196-                0.41    1.43     240/240         surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*) [30]
+197-                0.06    1.13     240/240         surface_integral::surf_MassPAng(double, int, cgh*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, double*, monitor*) [32]
+198-                0.00    0.86      20/20          bssn_class::Compute_Psi4(int) [35]
+199:                0.37    0.18       9/5457        compute_rhs_bssn_ [5]
+200-                0.00    0.06       8/1308        bssn_class::Constraint_Out() [17]
+201-                0.00    0.05      17/8212        Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+202-                0.00    0.00     260/440         monitor::writefile(double, int, double*) [436]
+203-                0.00    0.00     240/240         monitor::writefile(double, int, double*, double*) [437]
+204------------------------------------------------
+205-                3.35    1.17  125928/125928      monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [8]
+206-[25]     1.2    3.35    1.17  125928         restrict3_ [25]
+207-                1.17    0.00  125928/744441      symmetry_bd_ [22]
+208------------------------------------------------
+209-                0.00    3.87    4355/4355        bssn_class::Constraint_Out() [17]
+210-[26]     1.0    0.00    3.87    4355         Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int) [26]
+211-                0.01    2.23    4355/29043       Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int) [13]
+212-                0.00    1.62    4355/19278       Parallel::build_buffer_gsl(Patch*) [21]
+213-                0.00    0.00   34840/231952      Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**) [59]
+214-                0.00    0.00   34840/35552       Parallel::build_owned_gsl4(Patch*, int, int) [76]
+215------------------------------------------------
+216-                                                 <spontaneous>
+217-[27]     0.8    3.08    0.00                 _init [27]
+218------------------------------------------------
+219-                0.15    0.00    1176/15936       Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool) [41]
+220-                1.91    0.00   14760/15936       Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int) [29]
+221-[28]     0.5    2.06    0.00   15936         average2_ [28]
+222------------------------------------------------
+223-                0.02    1.91    1093/1093        bssn_class::Constraint_Out() [17]
+224-[29]     0.5    0.02    1.91    1093         Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int) [29]
+225-                1.91    0.00   14760/15936       average2_ [28]
+226------------------------------------------------
+227-                0.41    1.43     240/240         bssn_class::Compute_Constraint() [24]
+228-[30]     0.5    0.41    1.43     240         surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*) [30]
+229-                0.22    1.14 46448640/46448640     misc::Wigner_d_function(int, int, int, double) [31]
+230-                0.04    0.03     240/1760        Patch::Interp_Points(MyList<var>*, int, double**, double*, int) [43]
+231------------------------------------------------
+232-                0.22    1.14 46448640/46448640     surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*) [30]
+233-[31]     0.3    0.22    1.14 46448640         misc::Wigner_d_function(int, int, int, double) [31]
+234-                1.14    0.00 521994240/521994240     misc::fact(int) [33]
+--
+300-[42]     0.1    0.00    0.54       1         bssn_class::Read_Ansorg() [42]
+301-                0.00    0.27  563166/563166      Ansorg::ps_u_at_xyz(double, double, double) [48]
+302-                0.00    0.22       1/21          bssn_class::Compute_Constraint() [24]
+303-                0.04    0.00       9/9           get_ansorg_nbhs_ [58]
+304-                0.00    0.02       9/9           Parallel::Dump_Data(MyList<Patch>*, MyList<var>*, char*, double, double) [65]
+305-                0.00    0.00     402/1939        misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&) [431]
+306-                0.00    0.00       1/15          std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) [455]
+307-                0.00    0.00       1/1           Ansorg::~Ansorg() [479]
+308-                0.00    0.00       1/1           Ansorg::Ansorg(char*, int) [478]
+309------------------------------------------------
+310-                0.04    0.03     240/1760        surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*) [30]
+311-                0.04    0.03     240/1760        surface_integral::surf_MassPAng(double, int, cgh*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, double*, monitor*) [32]
+312-                0.23    0.16    1280/1760        Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int) [46]
+313-[43]     0.1    0.32    0.22    1760         Patch::Interp_Points(MyList<var>*, int, double**, double*, int) [43]
+314-                0.00    0.22   53070/53420       global_interp_ [50]
+315-                0.00    0.00    5280/701766      Patch::getdX(int) [428]
+316------------------------------------------------
+317-                0.00    0.03       1/21          bssn_class::Evolve(int) [2]
+318-                0.00    0.50      20/21          cgh::cgh(int, int, int, char*, int, monitor*) [16]
+319-[44]     0.1    0.00    0.53      21         bssn_class::Interp_Constraint(bool) [44]
+320:                0.33    0.16       8/5457        compute_rhs_bssn_ [5]
+321-                0.00    0.02       9/8212        Parallel::Sync(MyList<Patch>*, MyList<var>*, int) [10]
+322-                0.01    0.00   21000/21000       cgh::Interp_One_Point(MyList<var>*, double*, double*, int) [66]
+323------------------------------------------------
+324-                0.00    0.52       1/1           main [1]
+325-[45]     0.1    0.00    0.52       1         bssn_class::Initialize() [45]
+326-                0.00    0.52       1/21          cgh::cgh(int, int, int, char*, int, monitor*) [16]
+327-                0.00    0.00       5/13216975     Block::getdX(int) [69]
+328-                0.00    0.00       2/2           checkpoint::addvariablelist(MyList<var>*) [459]
+329-                0.00    0.00       1/15          std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) [455]
+330-                0.00    0.00       1/1           cgh::compose_cgh(int) [469]
+331-                0.00    0.00       1/1           bssn_class::Setup_Black_Hole_position() [463]
+332------------------------------------------------
+333-                0.00    0.39    1280/1280        bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int) [47]
+334-[46]     0.1    0.00    0.39    1280         Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int) [46]
+335-                0.23    0.16    1280/1760        Patch::Interp_Points(MyList<var>*, int, double**, double*, int) [43]
+336-                0.00    0.00    4827/701766      Patch::getdX(int) [428]
+337------------------------------------------------
+338-                0.00    0.39     640/640         bssn_class::Step(int, int) [4]
+339-[47]     0.1    0.00    0.39     640         bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int) [47]
+340-                0.00    0.39    1280/1280        Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int) [46]
+341------------------------------------------------
+342-                0.00    0.27  563166/563166      bssn_class::Read_Ansorg() [42]
+343-[48]     0.1    0.00    0.27  563166         Ansorg::ps_u_at_xyz(double, double, double) [48]
+344-                0.25    0.02  563166/563166      Ansorg::interpolate_tri_bar(double, double, double, int, int, int, double*, double*, double*, double*) [49]
+345-                0.00    0.00  563166/563166      Ansorg::xyz_to_ABp(double, double, double, double*, double*, double*) [429]
+346------------------------------------------------
+347-                0.25    0.02  563166/563166      Ansorg::ps_u_at_xyz(double, double, double) [48]
+348-[49]     0.1    0.25    0.02  563166         Ansorg::interpolate_tri_bar(double, double, double, int, int, int, double*, double*, double*, double*) [49]
+349-                0.02    0.00 1689498/1689498     Ansorg::find_point_bisection(double, int, double*, int) [62]
+350------------------------------------------------
+351-                0.00    0.00     350/53420       Patch::Interp_ONE_Point(MyList<var>*, double*, double*, int) [72]
+352-                0.00    0.22   53070/53420       Patch::Interp_Points(MyList<var>*, int, double**, double*, int) [43]
+353-[50]     0.1    0.00    0.22   53420         global_interp_ [50]
+354-                0.02    0.18   53420/53420       polin3_ [52]
+355-                0.02    0.00   53420/53420       decide3d_ [60]
+--
+710-  [45] bssn_class::Initialize() [69] Block::getdX(int)    [10] Parallel::Sync(MyList<Patch>*, MyList<var>*, int)
+711-  [42] bssn_class::Read_Ansorg() [68] Block::swapList(MyList<var>*, MyList<var>*, int) [57] Parallel::L2Norm(Patch*, var*)
+712-  [35] bssn_class::Compute_Psi4(int) [434] Block::Block(int, int*, double*, int, int, int, int, int) [450] Parallel::cut_gs(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*&)
+713-   [3] bssn_class::RecursiveStep(int) [435] Block::~Block() [446] Parallel::cut_gsl(MyList<Parallel::gridseg>*&)
+714-  [17] bssn_class::Constraint_Out() [457] Patch::checkPatch(bool) [38] Parallel::Restrict(MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, int)
+715-  [47] bssn_class::compute_Porg_rhs(double**, double**, var*, var*, var*, int) [43] Patch::Interp_Points(MyList<var>*, int, double**, double*, int) [448] Parallel::checkgsl(MyList<Parallel::gridseg>*, bool)
+716-  [44] bssn_class::Interp_Constraint(bool) [72] Patch::Interp_ONE_Point(MyList<var>*, double*, double*, int) [13] Parallel::transfer(MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**, MyList<var>*, MyList<var>*, int)
+717- [451] bssn_class::check_Stdin_Abort() [428] Patch::getdX(int) [64] Parallel::Dump_Data(Patch*, MyList<var>*, char*, double, double, int)
+718-  [24] bssn_class::Compute_Constraint() [441] Patch::Patch(int, int*, double*, int, bool, int) [65] Parallel::Dump_Data(MyList<Patch>*, MyList<var>*, char*, double, double)
+719- [463] bssn_class::Setup_Black_Hole_position() [442] Patch::~Patch() [447] Parallel::merge_gsl(MyList<Parallel::gridseg>*&, double)
+720-   [4] bssn_class::Step(int, int) [429] Ansorg::xyz_to_ABp(double, double, double, double*, double*, double*) [440] Parallel::writefile(double, int, int, int, double, double, double, double, double, double, char*, double*)
+721-   [2] bssn_class::Evolve(int) [48] Ansorg::ps_u_at_xyz(double, double, double) [481] std::map<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, int, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, int> > >::~map()
+722-  [74] bssn_class::bssn_class(double, double, double, double, double, double, double, int, int, char*, double, double, double, int, int, int, double, double) [49] Ansorg::interpolate_tri_bar(double, double, double, int, int, int, double*, double*, double*, double*) [482] std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::pair<char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, true>(char const (&) [9], std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&)
+723- [464] bssn_class::~bssn_class() [62] Ansorg::find_point_bisection(double, int, double*, int) [461] std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >::~pair()
+724- [459] checkpoint::addvariablelist(MyList<var>*) [477] Ansorg::set_ABp() [462] std::pair<std::_Rb_tree_iterator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, bool> std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::_M_insert_unique<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >(std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >&&)
+725- [465] checkpoint::checkpoint(bool, char const*, int) [478] Ansorg::Ansorg(char*, int) [455] std::_Rb_tree<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::allocator<std::pair<std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::find(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&)
+726- [466] checkpoint::~checkpoint() [479] Ansorg::~Ansorg()  [27] _init
+727-  [32] surface_integral::surf_MassPAng(double, int, cgh*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, var*, double*, monitor*) [480] monitor::print_message(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [34] admmass_bssn_
+728-  [30] surface_integral::surf_Wave(double, int, cgh*, var*, var*, int, int, int, double*, double*, monitor*) [436] monitor::writefile(double, int, double*) [28] average2_
+729- [467] surface_integral::surface_integral(int) [437] monitor::writefile(double, int, double*, double*) [61] average_
+730: [468] surface_integral::~surface_integral() [8] monitor::monitor(char const*, int, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) [5] compute_rhs_bssn_
+731- [469] cgh::compose_cgh(int) [458] monitor::~monitor()    [37] copy_
+732-  [39] cgh::Regrid_Onelevel(int, int, int, double**, double**, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, bool, monitor*) [444] Parallel::KillBlocks(MyList<Patch>*) [60] decide3d_
+733-  [66] cgh::Interp_One_Point(MyList<var>*, double*, double*, int) [456] Parallel::aligncheck(double*, double*, int, double*, int*) [18] enforce_ga_
+734-  [70] cgh::construct_patchlist(int, int) [59] Parallel::build_gstl(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>**, MyList<Parallel::gridseg>**) [7] fdderivs_
+735-  [40] cgh::recompose_cgh_Onelevel(int, int, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool) [445] Parallel::distribute(MyList<Patch>*, int, int, int, bool, int) [12] fderivs_
+736- [470] cgh::settrfls(int)    [443] Parallel::partition3(int*, int, int*, int, int*) [77] frame_dummy
+737- [471] cgh::read_bbox(int, char*) [26] Parallel::OutBdLow2Hi(Patch*, Patch*, MyList<var>*, MyList<var>*, int) [58] get_ansorg_nbhs_
+738- [472] cgh::sethandle(monitor*) [15] Parallel::gs_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [36] getnp4_
+739-  [16] cgh::cgh(int, int, int, char*, int, monitor*) [20] Parallel::gsl_subtract(MyList<Parallel::gridseg>*, MyList<Parallel::gridseg>*) [50] global_interp_
+740- [473] cgh::~cgh()            [67] Parallel::build_bulk_gsl(Block*, Patch*) [9] kodis_
+741- [454] var::setpropspeed(double) [71] Parallel::add_ghost_touch(MyList<Parallel::gridseg>*&) [56] l2normhelper_
+742- [438] var::var(char const*, int, double, double, double) [23] Parallel::build_ghost_gsl(Patch*) [6] lopsided_
+743- [439] var::~var()            [41] Parallel::fill_level_data(MyList<Patch>*, MyList<Patch>*, MyList<Patch>*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int, bool, bool) [51] lowerboundset_
+744- [431] misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&) [21] Parallel::build_buffer_gsl(Patch*) [52] polin3_
+745- [433] misc::parse_parts(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&, int&, int&, int&) [75] Parallel::build_owned_gsl0(Patch*, int) [53] polint_
+746- [460] misc::inversearray(double*, int) [73] Parallel::build_owned_gsl2(Patch*, int) [11] prolong3_
+747-  [31] misc::Wigner_d_function(int, int, int, double) [76] Parallel::build_owned_gsl4(Patch*, int, int) [25] restrict3_
+748-  [33] misc::fact(int)       [430] Parallel::build_complete_gsl(Patch*) [19] rungekutta4_rout_
+749- [474] misc::gaulegf(double, double, double*, double*, int) [46] Parallel::PatList_Interp_Points(MyList<Patch>*, MyList<var>*, int, double**, double*, int) [55] sommerfeld_rout_
+750- [452] perf::MemoryUsage(unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, unsigned long*, int) [29] Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, MyList<var>*, int) [54] sommerfeld_routbam_
+751- [453] perf::sample_mem_usage(int) [63] Parallel::prepare_inter_time_level(Patch*, MyList<var>*, MyList<var>*, MyList<var>*, int) [22] symmetry_bd_
+752- [475] perf::perf()          [449] Parallel::build_complete_gsl_virtual(MyList<Patch>*)
