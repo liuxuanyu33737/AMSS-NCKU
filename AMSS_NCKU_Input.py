@@ -13,7 +13,7 @@ import numpy
 
 ## Setting MPI processes and the output file directory
 
-File_directory = "baseline_true_20steps"
+File_directory = "profiling_gprof_20steps"
 Output_directory = "binary_output"               ## binary data file directory
                                                  ## The file directory name should not be too long
 MPI_processes = 8

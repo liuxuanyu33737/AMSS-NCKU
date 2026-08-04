@@ -105,7 +105,7 @@ def run_ABE():
     ## Define the command to run; cast other values to strings as needed
     
     if (input_data.GPU_Calculation == "no"):
-        mpi_command         = "mpirun -np " + str(input_data.MPI_processes) + " ./ABE"
+        mpi_command         = "GMON_OUT_PREFIX=gmon.out mpirun -x GMON_OUT_PREFIX -np " + str(input_data.MPI_processes) + " ./ABE"
         mpi_command_outfile = "ABE_out.log"
     elif (input_data.GPU_Calculation == "yes"):
         mpi_command         = "mpirun -np " + str(input_data.MPI_processes) + " ./ABEGPU"
