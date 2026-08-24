@@ -1139,6 +1139,127 @@ end subroutine d2dump
   n=ordn
   m=ordn
 
+  if (n == 6) then
+  c(1:6)=ya(1:6)
+  d(1:6)=ya(1:6)
+  ho(1:6)=xa(1:6)-x
+
+  ns=1
+  dif=abs(x-xa(1))
+  dift=abs(x-xa(2))
+  if(dift < dif) then
+    ns=2
+    dif=dift
+  end if
+  dift=abs(x-xa(3))
+  if(dift < dif) then
+    ns=3
+    dif=dift
+  end if
+  dift=abs(x-xa(4))
+  if(dift < dif) then
+    ns=4
+    dif=dift
+  end if
+  dift=abs(x-xa(5))
+  if(dift < dif) then
+    ns=5
+    dif=dift
+  end if
+  dift=abs(x-xa(6))
+  if(dift < dif) then
+    ns=6
+  end if
+
+  y=ya(ns)
+  ns=ns-1
+
+  den(1:5)=ho(1:5)-ho(2:6)
+  if (any(den(1:5) == 0.0))then
+    write(*,*) 'failure in polint for point',x
+    write(*,*) 'with input points: ',xa
+    stop
+  endif
+  den(1:5)=(c(2:6)-d(1:5))/den(1:5)
+  d(1:5)=ho(2:6)*den(1:5)
+  c(1:5)=ho(1:5)*den(1:5)
+  if (2*ns < 5) then
+    dy=c(ns+1)
+  else
+    dy=d(ns)
+    ns=ns-1
+  end if
+  y=y+dy
+
+  den(1:4)=ho(1:4)-ho(3:6)
+  if (any(den(1:4) == 0.0))then
+    write(*,*) 'failure in polint for point',x
+    write(*,*) 'with input points: ',xa
+    stop
+  endif
+  den(1:4)=(c(2:5)-d(1:4))/den(1:4)
+  d(1:4)=ho(3:6)*den(1:4)
+  c(1:4)=ho(1:4)*den(1:4)
+  if (2*ns < 4) then
+    dy=c(ns+1)
+  else
+    dy=d(ns)
+    ns=ns-1
+  end if
+  y=y+dy
+
+  den(1:3)=ho(1:3)-ho(4:6)
+  if (any(den(1:3) == 0.0))then
+    write(*,*) 'failure in polint for point',x
+    write(*,*) 'with input points: ',xa
+    stop
+  endif
+  den(1:3)=(c(2:4)-d(1:3))/den(1:3)
+  d(1:3)=ho(4:6)*den(1:3)
+  c(1:3)=ho(1:3)*den(1:3)
+  if (2*ns < 3) then
+    dy=c(ns+1)
+  else
+    dy=d(ns)
+    ns=ns-1
+  end if
+  y=y+dy
+
+  den(1:2)=ho(1:2)-ho(5:6)
+  if (any(den(1:2) == 0.0))then
+    write(*,*) 'failure in polint for point',x
+    write(*,*) 'with input points: ',xa
+    stop
+  endif
+  den(1:2)=(c(2:3)-d(1:2))/den(1:2)
+  d(1:2)=ho(5:6)*den(1:2)
+  c(1:2)=ho(1:2)*den(1:2)
+  if (2*ns < 2) then
+    dy=c(ns+1)
+  else
+    dy=d(ns)
+    ns=ns-1
+  end if
+  y=y+dy
+
+  den(1)=ho(1)-ho(6)
+  if (den(1) == 0.0)then
+    write(*,*) 'failure in polint for point',x
+    write(*,*) 'with input points: ',xa
+    stop
+  endif
+  den(1)=(c(2)-d(1))/den(1)
+  d(1)=ho(6)*den(1)
+  c(1)=ho(1)*den(1)
+  if (2*ns < 1) then
+    dy=c(ns+1)
+  else
+    dy=d(ns)
+    ns=ns-1
+  end if
+  y=y+dy
+
+  else
   c=ya
   d=ya
   ho=xa-x
@@ -1173,6 +1294,7 @@ end subroutine d2dump
     end if
     y=y+dy
   end do
+  end if
 
   return
 

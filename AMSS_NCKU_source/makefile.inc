@@ -6,9 +6,9 @@ filein  = -I/usr/include/ -I/usr/lib/x86_64-linux-gnu/openmpi/include/ -I/usr/li
 ## LDLIBS  = -L/usr/lib/x86_64-linux-gnu -lmpich -L/usr/lib64 -L/usr/lib/gcc/x86_64-linux-gnu/11 -lgfortran
 LDLIBS  = -L/usr/lib/x86_64-linux-gnu -L/usr/lib64 -L/usr/lib/gcc/x86_64-linux-gnu/11 -lgfortran -lmpi -lgfortran
 
-CXXAPPFLAGS  = -O3 -Wno-deprecated -Dfortran3 -Dnewc
+CXXAPPFLAGS  = -O3 -march=native -Wno-deprecated -Dfortran3 -Dnewc
 #f90appflags = -O3 -fpp
-f90appflags  = -O3 -x f95-cpp-input
+f90appflags  = -O3 -march=native -finline-functions -x f95-cpp-input
 f90          = gfortran 
 f77          = gfortran 
 CXX          = g++
