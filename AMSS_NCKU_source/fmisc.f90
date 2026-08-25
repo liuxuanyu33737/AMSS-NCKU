@@ -1115,6 +1115,141 @@ end subroutine d2dump
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! common code for cell and vertex
 !------------------------------------------------------------------------------
+! Fixed-size six-point Lagrangian polynomial interpolation.
+! This is the hot path used by prolongation when ghost_width == 3.
+! Keep polint below as the general-order implementation used by polin2/polin3.
+!------------------------------------------------------------------------------
+
+  subroutine polint6_fast(xa,ya,x,y,dy)
+
+  implicit none
+
+!~~~~~~> Input Parameter:
+  real*8, dimension(6), intent(in) :: xa,ya
+  real*8, intent(in) :: x
+  real*8, intent(out) :: y,dy
+
+!~~~~~~> Other parameter:
+
+  integer :: ns
+  real*8 :: c1,c2,c3,c4,c5,c6
+  real*8 :: d1,d2,d3,d4,d5,d6
+  real*8 :: h1,h2,h3,h4,h5,h6
+  real*8 :: den,dif,dift
+
+!~~~~~~>
+
+  c1=ya(1); c2=ya(2); c3=ya(3)
+  c4=ya(4); c5=ya(5); c6=ya(6)
+  d1=ya(1); d2=ya(2); d3=ya(3)
+  d4=ya(4); d5=ya(5); d6=ya(6)
+  h1=xa(1)-x; h2=xa(2)-x; h3=xa(3)-x
+  h4=xa(4)-x; h5=xa(5)-x; h6=xa(6)-x
+
+  ns=1
+  dif=dabs(x-xa(1))
+  dift=dabs(x-xa(2)); if(dift < dif)then; ns=2; dif=dift; endif
+  dift=dabs(x-xa(3)); if(dift < dif)then; ns=3; dif=dift; endif
+  dift=dabs(x-xa(4)); if(dift < dif)then; ns=4; dif=dift; endif
+  dift=dabs(x-xa(5)); if(dift < dif)then; ns=5; dif=dift; endif
+  dift=dabs(x-xa(6)); if(dift < dif)then; ns=6; endif
+
+  y=ya(ns)
+  ns=ns-1
+
+! First Neville column
+  den=h1-h2; if(den == 0.d0) goto 900
+  den=(c2-d1)/den; d1=h2*den; c1=h1*den
+  den=h2-h3; if(den == 0.d0) goto 900
+  den=(c3-d2)/den; d2=h3*den; c2=h2*den
+  den=h3-h4; if(den == 0.d0) goto 900
+  den=(c4-d3)/den; d3=h4*den; c3=h3*den
+  den=h4-h5; if(den == 0.d0) goto 900
+  den=(c5-d4)/den; d4=h5*den; c4=h4*den
+  den=h5-h6; if(den == 0.d0) goto 900
+  den=(c6-d5)/den; d5=h6*den; c5=h5*den
+  if(2*ns < 5)then
+    if(ns == 0) dy=c1
+    if(ns == 1) dy=c2
+    if(ns == 2) dy=c3
+  else
+    if(ns == 3) dy=d3
+    if(ns == 4) dy=d4
+    if(ns == 5) dy=d5
+    ns=ns-1
+  endif
+  y=y+dy
+
+! Second Neville column
+  den=h1-h3; if(den == 0.d0) goto 900
+  den=(c2-d1)/den; d1=h3*den; c1=h1*den
+  den=h2-h4; if(den == 0.d0) goto 900
+  den=(c3-d2)/den; d2=h4*den; c2=h2*den
+  den=h3-h5; if(den == 0.d0) goto 900
+  den=(c4-d3)/den; d3=h5*den; c3=h3*den
+  den=h4-h6; if(den == 0.d0) goto 900
+  den=(c5-d4)/den; d4=h6*den; c4=h4*den
+  if(2*ns < 4)then
+    if(ns == 0) dy=c1
+    if(ns == 1) dy=c2
+  else
+    if(ns == 2) dy=d2
+    if(ns == 3) dy=d3
+    if(ns == 4) dy=d4
+    ns=ns-1
+  endif
+  y=y+dy
+
+! Third Neville column
+  den=h1-h4; if(den == 0.d0) goto 900
+  den=(c2-d1)/den; d1=h4*den; c1=h1*den
+  den=h2-h5; if(den == 0.d0) goto 900
+  den=(c3-d2)/den; d2=h5*den; c2=h2*den
+  den=h3-h6; if(den == 0.d0) goto 900
+  den=(c4-d3)/den; d3=h6*den; c3=h3*den
+  if(2*ns < 3)then
+    if(ns == 0) dy=c1
+    if(ns == 1) dy=c2
+  else
+    if(ns == 2) dy=d2
+    if(ns == 3) dy=d3
+    ns=ns-1
+  endif
+  y=y+dy
+
+! Fourth Neville column
+  den=h1-h5; if(den == 0.d0) goto 900
+  den=(c2-d1)/den; d1=h5*den; c1=h1*den
+  den=h2-h6; if(den == 0.d0) goto 900
+  den=(c3-d2)/den; d2=h6*den; c2=h2*den
+  if(2*ns < 2)then
+    if(ns == 0) dy=c1
+  else
+    if(ns == 1) dy=d1
+    if(ns == 2) dy=d2
+    ns=ns-1
+  endif
+  y=y+dy
+
+! Fifth Neville column
+  den=h1-h6; if(den == 0.d0) goto 900
+  den=(c2-d1)/den; d1=h6*den; c1=h1*den
+  if(2*ns < 1)then
+    dy=c1
+  else
+    dy=d1
+  endif
+  y=y+dy
+
+  return
+
+900 continue
+  write(*,*) 'failure in polint6_fast for point',x
+  write(*,*) 'with input points: ',xa
+  stop
+
+  end subroutine polint6_fast
+!------------------------------------------------------------------------------
 ! Lagrangian polynomial interpolation
 !------------------------------------------------------------------------------
 

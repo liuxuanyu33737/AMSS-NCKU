@@ -470,7 +470,11 @@
 
          tmp1(cxB(1)+ghost_width-i+1:cxT(1)+ghost_width-i+1) = fh(cxB(1):cxT(1),j,k)
 
+#if (ghost_width == 3)
+         call polint6_fast(X,tmp1,0.d0,funf(i,j,k),ddy)
+#else
          call polint(X,tmp1,0.d0,funf(i,j,k),ddy,2*ghost_width)
+#endif
 
 ! for y direction
        elseif (fg(2) .eq. 0)then
@@ -529,7 +533,11 @@
 
          tmp1(cxB(2)+ghost_width-j+1:cxT(2)+ghost_width-j+1) = fh(i,cxB(2):cxT(2),k)
 
+#if (ghost_width == 3)
+         call polint6_fast(Y,tmp1,0.d0,funf(i,j,k),ddy)
+#else
          call polint(Y,tmp1,0.d0,funf(i,j,k),ddy,2*ghost_width)
+#endif
 
 ! for z direction
        else
@@ -588,7 +596,11 @@
 
          tmp1(cxB(3)+ghost_width-k+1:cxT(3)+ghost_width-k+1) = fh(i,j,cxB(3):cxT(3))
 
+#if (ghost_width == 3)
+         call polint6_fast(Z,tmp1,0.d0,funf(i,j,k),ddy)
+#else
          call polint(Z,tmp1,0.d0,funf(i,j,k),ddy,2*ghost_width)
+#endif
 
        endif
       
