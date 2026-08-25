@@ -997,10 +997,30 @@
   fy = ZEO
   fz = ZEO
 
+! The regular interior always uses the fourth-order centered stencil.
+! Compute it separately to remove the repeated bounds tests from the hot loop.
+  do k=3,ex(3)-2
+  do j=3,ex(2)-2
+  do i=3,ex(1)-2
+      fx(i,j,k)=d12dx*(fh(i-2,j,k)-EIT*fh(i-1,j,k) &
+                      +EIT*fh(i+1,j,k)-fh(i+2,j,k))
+      fy(i,j,k)=d12dy*(fh(i,j-2,k)-EIT*fh(i,j-1,k) &
+                      +EIT*fh(i,j+1,k)-fh(i,j+2,k))
+      fz(i,j,k)=d12dz*(fh(i,j,k-2)-EIT*fh(i,j,k-1) &
+                      +EIT*fh(i,j,k+1)-fh(i,j,k+2))
+  enddo
+  enddo
+  enddo
+
+! Retain the original boundary selection and fallback stencils.
   do k=1,ex(3)-1
   do j=1,ex(2)-1
   do i=1,ex(1)-1
-#if 0  
+
+    if(i>=3 .and. i<=ex(1)-2 .and. &
+       j>=3 .and. j<=ex(2)-2 .and. &
+       k>=3 .and. k<=ex(3)-2) cycle
+#if 0
 ! x direction   
         if(i+2 <= imax .and. i-2 >= imin)then
 !
