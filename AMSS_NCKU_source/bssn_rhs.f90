@@ -159,12 +159,10 @@
 
   chi_rhs = F2o3 *chin1*( alpn1 * trK - div_beta ) !rhs for chi
 
-  call fderivs(ex,dxx,gxxx,gxxy,gxxz,X,Y,Z,SYM ,SYM ,SYM ,Symmetry,Lev)
-  call fderivs(ex,gxy,gxyx,gxyy,gxyz,X,Y,Z,ANTI,ANTI,SYM ,Symmetry,Lev)
-  call fderivs(ex,gxz,gxzx,gxzy,gxzz,X,Y,Z,ANTI,SYM ,ANTI,Symmetry,Lev)
-  call fderivs(ex,dyy,gyyx,gyyy,gyyz,X,Y,Z,SYM ,SYM ,SYM ,Symmetry,Lev)
-  call fderivs(ex,gyz,gyzx,gyzy,gyzz,X,Y,Z,SYM ,ANTI,ANTI,Symmetry,Lev)
-  call fderivs(ex,dzz,gzzx,gzzy,gzzz,X,Y,Z,SYM ,SYM ,SYM ,Symmetry,Lev)
+  call fderivs_metric6(ex,dxx,gxy,gxz,dyy,gyz,dzz, &
+       gxxx,gxxy,gxxz,gxyx,gxyy,gxyz,gxzx,gxzy,gxzz, &
+       gyyx,gyyy,gyyz,gyzx,gyzy,gyzz,gzzx,gzzy,gzzz, &
+       X,Y,Z,Symmetry,Lev)
 
   gxx_rhs = - TWO * alpn1 * Axx    -  F2o3 * gxx * div_beta          + &
               TWO *(  gxx * betaxx +   gxy * betayx +   gxz * betazx)
