@@ -231,12 +231,53 @@ subroutine lopsided(ex,X,Y,Z,f,f_rhs,Sfx,Sfy,Sfz,Symmetry,SoA)
 
   call symmetry_bd(3,ex,f,fh,SoA)
 
-! upper bound set ex-1 only for efficiency, 
+! Both forward and backward fourth-order stencils are available here.
+! Keep the shift-sign selection, but remove all stencil bounds tests.
+  do k=4,ex(3)-3
+  do j=4,ex(2)-3
+  do i=4,ex(1)-3
+    if(Sfx(i,j,k) > ZEO)then
+      f_rhs(i,j,k)=f_rhs(i,j,k)+                                                   &
+                   Sfx(i,j,k)*d12dx*(-F3*fh(i-1,j,k)-F10*fh(i,j,k)+F18*fh(i+1,j,k) &
+                                     -F6*fh(i+2,j,k)+    fh(i+3,j,k))
+    elseif(Sfx(i,j,k) < ZEO)then
+      f_rhs(i,j,k)=f_rhs(i,j,k)-                                                   &
+                   Sfx(i,j,k)*d12dx*(-F3*fh(i+1,j,k)-F10*fh(i,j,k)+F18*fh(i-1,j,k) &
+                                     -F6*fh(i-2,j,k)+    fh(i-3,j,k))
+    endif
+
+    if(Sfy(i,j,k) > ZEO)then
+      f_rhs(i,j,k)=f_rhs(i,j,k)+                                                   &
+                   Sfy(i,j,k)*d12dy*(-F3*fh(i,j-1,k)-F10*fh(i,j,k)+F18*fh(i,j+1,k) &
+                                     -F6*fh(i,j+2,k)+    fh(i,j+3,k))
+    elseif(Sfy(i,j,k) < ZEO)then
+      f_rhs(i,j,k)=f_rhs(i,j,k)-                                                   &
+                   Sfy(i,j,k)*d12dy*(-F3*fh(i,j+1,k)-F10*fh(i,j,k)+F18*fh(i,j-1,k) &
+                                     -F6*fh(i,j-2,k)+    fh(i,j-3,k))
+    endif
+
+    if(Sfz(i,j,k) > ZEO)then
+      f_rhs(i,j,k)=f_rhs(i,j,k)+                                                   &
+                   Sfz(i,j,k)*d12dz*(-F3*fh(i,j,k-1)-F10*fh(i,j,k)+F18*fh(i,j,k+1) &
+                                     -F6*fh(i,j,k+2)+    fh(i,j,k+3))
+    elseif(Sfz(i,j,k) < ZEO)then
+      f_rhs(i,j,k)=f_rhs(i,j,k)-                                                   &
+                   Sfz(i,j,k)*d12dz*(-F3*fh(i,j,k+1)-F10*fh(i,j,k)+F18*fh(i,j,k-1) &
+                                     -F6*fh(i,j,k-2)+    fh(i,j,k-3))
+    endif
+  enddo
+  enddo
+  enddo
+
+! upper bound set ex-1 only for efficiency,
 ! the loop body will set ex 0 also
   do k=1,ex(3)-1
   do j=1,ex(2)-1
   do i=1,ex(1)-1
-#if 0  
+    if(i>=4 .and. i<=ex(1)-3 .and. &
+       j>=4 .and. j<=ex(2)-3 .and. &
+       k>=4 .and. k<=ex(3)-3) cycle
+#if 0
 !! old code
 ! x direction   
     if(Sfx(i,j,k) >= ZEO .and. i+3 <= imax .and. i-1 >= imin)then
