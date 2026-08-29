@@ -149,9 +149,9 @@
   gyy = dyy + ONE
   gzz = dzz + ONE
 
-  call fderivs(ex,betax,betaxx,betaxy,betaxz,X,Y,Z,ANTI, SYM, SYM,Symmetry,Lev)
-  call fderivs(ex,betay,betayx,betayy,betayz,X,Y,Z, SYM,ANTI, SYM,Symmetry,Lev)
-  call fderivs(ex,betaz,betazx,betazy,betazz,X,Y,Z, SYM, SYM,ANTI,Symmetry,Lev)
+  call fderivs_shift3(ex,betax,betay,betaz, &
+       betaxx,betaxy,betaxz,betayx,betayy,betayz, &
+       betazx,betazy,betazz,X,Y,Z,Symmetry,Lev)
   
   div_beta = betaxx + betayy + betazz
  
