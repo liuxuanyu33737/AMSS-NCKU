@@ -330,9 +330,9 @@
   Gamza =       gupxx * Gamzxx + gupyy * Gamzyy + gupzz * Gamzzz + &
           TWO*( gupxy * Gamzxy + gupxz * Gamzxz + gupyz * Gamzyz )
 
-  call fderivs(ex,Gamx,Gamxx,Gamxy,Gamxz,X,Y,Z,ANTI,SYM ,SYM ,Symmetry,Lev)
-  call fderivs(ex,Gamy,Gamyx,Gamyy,Gamyz,X,Y,Z,SYM ,ANTI,SYM ,Symmetry,Lev)
-  call fderivs(ex,Gamz,Gamzx,Gamzy,Gamzz,X,Y,Z,SYM ,SYM ,ANTI,Symmetry,Lev)
+  call fderivs_gamma3(ex,Gamx,Gamy,Gamz, &
+       Gamxx,Gamxy,Gamxz,Gamyx,Gamyy,Gamyz, &
+       Gamzx,Gamzy,Gamzz,X,Y,Z,Symmetry,Lev)
 
   Gamx_rhs =               Gamx_rhs +  F2o3 *  Gamxa * div_beta        - &
                      Gamxa * betaxx - Gamya * betaxy - Gamza * betaxz  + &

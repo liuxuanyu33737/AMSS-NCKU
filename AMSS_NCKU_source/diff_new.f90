@@ -2089,6 +2089,135 @@
   return
 
   end subroutine fderivs_shift3
+!-----------------------------------------------------------------------------
+!
+! Fused first derivatives for the three Gamma components.
+!
+  subroutine fderivs_gamma3(ex,Gamx,Gamy,Gamz, &
+       Gamxx,Gamxy,Gamxz,Gamyx,Gamyy,Gamyz, &
+       Gamzx,Gamzy,Gamzz,X,Y,Z,symmetry,onoff)
+  implicit none
+
+  integer,                               intent(in ):: ex(1:3),symmetry,onoff
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(in ):: Gamx,Gamy,Gamz
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(out):: Gamxx,Gamxy,Gamxz
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(out):: Gamyx,Gamyy,Gamyz
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(out):: Gamzx,Gamzy,Gamzz
+  real*8,                                intent(in) :: X(ex(1)),Y(ex(2)),Z(ex(3))
+
+  real*8 :: dX,dY,dZ
+  real*8,dimension(-1:ex(1),-1:ex(2),-1:ex(3)) :: fhx,fhy,fhz
+  real*8, dimension(3) :: SoA
+  integer :: imin,jmin,kmin,imax,jmax,kmax,i,j,k
+  real*8 :: d12dx,d12dy,d12dz,d2dx,d2dy,d2dz
+  integer, parameter :: NO_SYMM = 0, EQ_SYMM = 1
+  real*8,  parameter :: ZEO=0.d0,ONE=1.d0
+  real*8,  parameter :: TWO=2.d0,EIT=8.d0,F12=1.2d1
+
+  dX = X(2)-X(1)
+  dY = Y(2)-Y(1)
+  dZ = Z(2)-Z(1)
+
+  imax = ex(1)
+  jmax = ex(2)
+  kmax = ex(3)
+
+  imin = 1
+  jmin = 1
+  kmin = 1
+  if(Symmetry > NO_SYMM .and. dabs(Z(1)) < dZ) kmin = -1
+  if(Symmetry > EQ_SYMM .and. dabs(X(1)) < dX) imin = -1
+  if(Symmetry > EQ_SYMM .and. dabs(Y(1)) < dY) jmin = -1
+
+  SoA = (/ -ONE, ONE, ONE /)
+  call symmetry_bd(2,ex,Gamx,fhx,SoA)
+  SoA = (/ ONE, -ONE, ONE /)
+  call symmetry_bd(2,ex,Gamy,fhy,SoA)
+  SoA = (/ ONE, ONE, -ONE /)
+  call symmetry_bd(2,ex,Gamz,fhz,SoA)
+
+  d12dx = ONE/F12/dX
+  d12dy = ONE/F12/dY
+  d12dz = ONE/F12/dZ
+
+  d2dx = ONE/TWO/dX
+  d2dy = ONE/TWO/dY
+  d2dz = ONE/TWO/dZ
+
+  Gamxx = ZEO
+  Gamxy = ZEO
+  Gamxz = ZEO
+  Gamyx = ZEO
+  Gamyy = ZEO
+  Gamyz = ZEO
+  Gamzx = ZEO
+  Gamzy = ZEO
+  Gamzz = ZEO
+
+  do k=3,ex(3)-2
+  do j=3,ex(2)-2
+  do i=3,ex(1)-2
+      Gamxx(i,j,k)=d12dx*(fhx(i-2,j,k)-EIT*fhx(i-1,j,k) &
+                           +EIT*fhx(i+1,j,k)-fhx(i+2,j,k))
+      Gamxy(i,j,k)=d12dy*(fhx(i,j-2,k)-EIT*fhx(i,j-1,k) &
+                           +EIT*fhx(i,j+1,k)-fhx(i,j+2,k))
+      Gamxz(i,j,k)=d12dz*(fhx(i,j,k-2)-EIT*fhx(i,j,k-1) &
+                           +EIT*fhx(i,j,k+1)-fhx(i,j,k+2))
+      Gamyx(i,j,k)=d12dx*(fhy(i-2,j,k)-EIT*fhy(i-1,j,k) &
+                           +EIT*fhy(i+1,j,k)-fhy(i+2,j,k))
+      Gamyy(i,j,k)=d12dy*(fhy(i,j-2,k)-EIT*fhy(i,j-1,k) &
+                           +EIT*fhy(i,j+1,k)-fhy(i,j+2,k))
+      Gamyz(i,j,k)=d12dz*(fhy(i,j,k-2)-EIT*fhy(i,j,k-1) &
+                           +EIT*fhy(i,j,k+1)-fhy(i,j,k+2))
+      Gamzx(i,j,k)=d12dx*(fhz(i-2,j,k)-EIT*fhz(i-1,j,k) &
+                           +EIT*fhz(i+1,j,k)-fhz(i+2,j,k))
+      Gamzy(i,j,k)=d12dy*(fhz(i,j-2,k)-EIT*fhz(i,j-1,k) &
+                           +EIT*fhz(i,j+1,k)-fhz(i,j+2,k))
+      Gamzz(i,j,k)=d12dz*(fhz(i,j,k-2)-EIT*fhz(i,j,k-1) &
+                           +EIT*fhz(i,j,k+1)-fhz(i,j,k+2))
+  enddo
+  enddo
+  enddo
+
+  do k=1,ex(3)-1
+  do j=1,ex(2)-1
+  do i=1,ex(1)-1
+    if(i>=3 .and. i<=ex(1)-2 .and. &
+       j>=3 .and. j<=ex(2)-2 .and. &
+       k>=3 .and. k<=ex(3)-2) cycle
+
+    if(i+2 <= imax .and. i-2 >= imin .and. &
+       j+2 <= jmax .and. j-2 >= jmin .and. &
+       k+2 <= kmax .and. k-2 >= kmin) then
+      Gamxx(i,j,k)=d12dx*(fhx(i-2,j,k)-EIT*fhx(i-1,j,k)+EIT*fhx(i+1,j,k)-fhx(i+2,j,k))
+      Gamxy(i,j,k)=d12dy*(fhx(i,j-2,k)-EIT*fhx(i,j-1,k)+EIT*fhx(i,j+1,k)-fhx(i,j+2,k))
+      Gamxz(i,j,k)=d12dz*(fhx(i,j,k-2)-EIT*fhx(i,j,k-1)+EIT*fhx(i,j,k+1)-fhx(i,j,k+2))
+      Gamyx(i,j,k)=d12dx*(fhy(i-2,j,k)-EIT*fhy(i-1,j,k)+EIT*fhy(i+1,j,k)-fhy(i+2,j,k))
+      Gamyy(i,j,k)=d12dy*(fhy(i,j-2,k)-EIT*fhy(i,j-1,k)+EIT*fhy(i,j+1,k)-fhy(i,j+2,k))
+      Gamyz(i,j,k)=d12dz*(fhy(i,j,k-2)-EIT*fhy(i,j,k-1)+EIT*fhy(i,j,k+1)-fhy(i,j,k+2))
+      Gamzx(i,j,k)=d12dx*(fhz(i-2,j,k)-EIT*fhz(i-1,j,k)+EIT*fhz(i+1,j,k)-fhz(i+2,j,k))
+      Gamzy(i,j,k)=d12dy*(fhz(i,j-2,k)-EIT*fhz(i,j-1,k)+EIT*fhz(i,j+1,k)-fhz(i,j+2,k))
+      Gamzz(i,j,k)=d12dz*(fhz(i,j,k-2)-EIT*fhz(i,j,k-1)+EIT*fhz(i,j,k+1)-fhz(i,j,k+2))
+    elseif(i+1 <= imax .and. i-1 >= imin .and. &
+           j+1 <= jmax .and. j-1 >= jmin .and. &
+           k+1 <= kmax .and. k-1 >= kmin) then
+      Gamxx(i,j,k)=d2dx*(-fhx(i-1,j,k)+fhx(i+1,j,k))
+      Gamxy(i,j,k)=d2dy*(-fhx(i,j-1,k)+fhx(i,j+1,k))
+      Gamxz(i,j,k)=d2dz*(-fhx(i,j,k-1)+fhx(i,j,k+1))
+      Gamyx(i,j,k)=d2dx*(-fhy(i-1,j,k)+fhy(i+1,j,k))
+      Gamyy(i,j,k)=d2dy*(-fhy(i,j-1,k)+fhy(i,j+1,k))
+      Gamyz(i,j,k)=d2dz*(-fhy(i,j,k-1)+fhy(i,j,k+1))
+      Gamzx(i,j,k)=d2dx*(-fhz(i-1,j,k)+fhz(i+1,j,k))
+      Gamzy(i,j,k)=d2dy*(-fhz(i,j-1,k)+fhz(i,j+1,k))
+      Gamzz(i,j,k)=d2dz*(-fhz(i,j,k-1)+fhz(i,j,k+1))
+    endif
+  enddo
+  enddo
+  enddo
+
+  return
+
+  end subroutine fderivs_gamma3
 #elif (ghost_width == 4)
 ! sixth order code
 
