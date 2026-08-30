@@ -1370,7 +1370,7 @@
   real*8, dimension(3) :: SoA
   integer :: imin,jmin,kmin,imax,jmax,kmax,i,j,k
   real*8  :: Sdxdx,Sdydy,Sdzdz,Fdxdx,Fdydy,Fdzdz
-  real*8  :: Sdxdy,Sdxdz,Sdydz,Fdxdy,Fdxdz,Fdydz
+  real*8  :: Sdxdy,Sdxdz,Sdydz,Fdxdy,Fdxdz,Fdydz,fcenter
   integer, parameter :: NO_SYMM = 0, EQ_SYMM = 1, OCTANT = 2
   real*8, parameter :: ZEO=0.d0, ONE=1.d0, TWO=2.d0, F1o4=2.5d-1, F9=9.d0,  F45=4.5d1
   real*8, parameter :: F8=8.d0, F16=1.6d1, F30=3.d1, F27=2.7d1, F270=2.7d2, F490=4.9d2
@@ -1507,11 +1507,12 @@
    if(i+2 <= imax .and. i-2 >= imin .and. &
       j+2 <= jmax .and. j-2 >= jmin .and. &
       k+2 <= kmax .and. k-2 >= kmin) then
-   fxx(i,j,k) = Fdxdx*(-fh(i-2,j,k)+F16*fh(i-1,j,k)-F30*fh(i,j,k) &
+   fcenter = fh(i,j,k)
+   fxx(i,j,k) = Fdxdx*(-fh(i-2,j,k)+F16*fh(i-1,j,k)-F30*fcenter &
                        -fh(i+2,j,k)+F16*fh(i+1,j,k)              )
-   fyy(i,j,k) = Fdydy*(-fh(i,j-2,k)+F16*fh(i,j-1,k)-F30*fh(i,j,k) &
+   fyy(i,j,k) = Fdydy*(-fh(i,j-2,k)+F16*fh(i,j-1,k)-F30*fcenter &
                        -fh(i,j+2,k)+F16*fh(i,j+1,k)              )
-   fzz(i,j,k) = Fdzdz*(-fh(i,j,k-2)+F16*fh(i,j,k-1)-F30*fh(i,j,k) &
+   fzz(i,j,k) = Fdzdz*(-fh(i,j,k-2)+F16*fh(i,j,k-1)-F30*fcenter &
                        -fh(i,j,k+2)+F16*fh(i,j,k+1)              )
    fxy(i,j,k) = Fdxdy*(     (fh(i-2,j-2,k)-F8*fh(i-1,j-2,k)+F8*fh(i+1,j-2,k)-fh(i+2,j-2,k))  &
                        -F8 *(fh(i-2,j-1,k)-F8*fh(i-1,j-1,k)+F8*fh(i+1,j-1,k)-fh(i+2,j-1,k))  &
