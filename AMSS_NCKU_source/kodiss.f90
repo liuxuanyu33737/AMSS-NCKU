@@ -133,6 +133,7 @@ real*8,intent(in) :: eps
 ! local variables
 real*8,dimension(-2:ex(1),-2:ex(2),-2:ex(3))   :: fh
 integer :: imin,jmin,kmin,imax,jmax,kmax
+integer :: ilo,jlo,klo,ihi,jhi,khi
 integer :: i,j,k
 real*8  :: dX,dY,dZ
 real*8, parameter :: ONE=1.d0,SIX=6.d0,FIT=1.5d1,TWT=2.d1
@@ -159,13 +160,16 @@ integer, parameter :: NO_SYMM=0, OCTANT=2
 
   call symmetry_bd(3,ex,f,fh,SoA)
 
-  do k=1,ex(3)
-  do j=1,ex(2)
-  do i=1,ex(1)
+  ilo = max(1,imin+3)
+  jlo = max(1,jmin+3)
+  klo = max(1,kmin+3)
+  ihi = min(ex(1),imax-3)
+  jhi = min(ex(2),jmax-3)
+  khi = min(ex(3),kmax-3)
 
-  if(i-3 >= imin .and. i+3 <= imax .and. &
-     j-3 >= jmin .and. j+3 <= jmax .and. &
-     k-3 >= kmin .and. k+3 <= kmax) then
+  do k=klo,khi
+  do j=jlo,jhi
+  do i=ilo,ihi
 #if 0     
 ! x direction
    f_rhs(i,j,k)       = f_rhs(i,j,k) + eps/dX/cof * (     &
@@ -205,8 +209,6 @@ integer, parameter :: NO_SYMM=0, OCTANT=2
                           FIT*(fh(i,j,k-1)+fh(i,j,k+1)) - &
                           TWT* fh(i,j,k)            )/dZ )
 #endif
-  endif
-
   enddo
   enddo
   enddo
