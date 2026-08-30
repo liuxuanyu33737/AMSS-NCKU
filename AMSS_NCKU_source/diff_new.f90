@@ -421,6 +421,154 @@
   return
 
   end subroutine fdderivs
+
+#endif
+
+#if (ghost_width == 3)
+! Compute the metric second-derivative contraction used by the BSSN Ricci
+! tensor without materializing six full-size derivative arrays.
+  subroutine fdderivs_metric_contract(ex,func,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,contract, &
+                                      X,Y,Z,SYM1,SYM2,SYM3,symmetry,onoff)
+  implicit none
+
+  integer,                              intent(in ):: ex(1:3),symmetry,onoff
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(in ):: func
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(in ):: gupxx,gupxy,gupxz,gupyy,gupyz,gupzz
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(out):: contract
+  real*8,                               intent(in ):: X(ex(1)),Y(ex(2)),Z(ex(3)),SYM1,SYM2,SYM3
+
+  real*8 :: dX,dY,dZ
+  real*8, dimension(-1:ex(1),-1:ex(2),-1:ex(3)) :: fh
+  real*8, dimension(3) :: SoA
+  integer :: imin,jmin,kmin,imax,jmax,kmax,i,j,k
+  real*8 :: Sdxdx,Sdydy,Sdzdz,Fdxdx,Fdydy,Fdzdz
+  real*8 :: Sdxdy,Sdxdz,Sdydz,Fdxdy,Fdxdz,Fdydz
+  real*8 :: dxx,dxy,dxz,dyy,dyz,dzz,diag,mixed
+  integer, parameter :: NO_SYMM = 0, EQ_SYMM = 1
+  real*8, parameter :: ZEO=0.d0, ONE=1.d0, TWO=2.d0, F1o4=2.5d-1
+  real*8, parameter :: F8=8.d0, F16=1.6d1, F30=3.d1
+  real*8, parameter :: F1o12=ONE/1.2d1, F1o144=ONE/1.44d2
+
+  dX = X(2)-X(1)
+  dY = Y(2)-Y(1)
+  dZ = Z(2)-Z(1)
+
+  imax = ex(1)
+  jmax = ex(2)
+  kmax = ex(3)
+  imin = 1
+  jmin = 1
+  kmin = 1
+  if(symmetry > NO_SYMM .and. dabs(Z(1)) < dZ) kmin = -1
+  if(symmetry > EQ_SYMM .and. dabs(X(1)) < dX) imin = -1
+  if(symmetry > EQ_SYMM .and. dabs(Y(1)) < dY) jmin = -1
+
+  SoA(1) = SYM1
+  SoA(2) = SYM2
+  SoA(3) = SYM3
+  call symmetry_bd(2,ex,func,fh,SoA)
+
+  Sdxdx = ONE/(dX*dX)
+  Sdydy = ONE/(dY*dY)
+  Sdzdz = ONE/(dZ*dZ)
+  Fdxdx = F1o12/(dX*dX)
+  Fdydy = F1o12/(dY*dY)
+  Fdzdz = F1o12/(dZ*dZ)
+  Sdxdy = F1o4/(dX*dY)
+  Sdxdz = F1o4/(dX*dZ)
+  Sdydz = F1o4/(dY*dZ)
+  Fdxdy = F1o144/(dX*dY)
+  Fdxdz = F1o144/(dX*dZ)
+  Fdydz = F1o144/(dY*dZ)
+
+  contract = ZEO
+
+! Keep the fourth-order regular interior branch-free so the unit-stride i loop
+! can be vectorized.  The second loop below retains the original fallback
+! selection for every point outside this regular interior.
+  do k=3,ex(3)-2
+  do j=3,ex(2)-2
+  do i=3,ex(1)-2
+    dxx = Fdxdx*(-fh(i-2,j,k)+F16*fh(i-1,j,k)-F30*fh(i,j,k) &
+                 -fh(i+2,j,k)+F16*fh(i+1,j,k))
+    dyy = Fdydy*(-fh(i,j-2,k)+F16*fh(i,j-1,k)-F30*fh(i,j,k) &
+                 -fh(i,j+2,k)+F16*fh(i,j+1,k))
+    dzz = Fdzdz*(-fh(i,j,k-2)+F16*fh(i,j,k-1)-F30*fh(i,j,k) &
+                 -fh(i,j,k+2)+F16*fh(i,j,k+1))
+    diag = gupxx(i,j,k)*dxx + gupyy(i,j,k)*dyy + gupzz(i,j,k)*dzz
+    dxy = Fdxdy*(     (fh(i-2,j-2,k)-F8*fh(i-1,j-2,k)+F8*fh(i+1,j-2,k)-fh(i+2,j-2,k)) &
+                 -F8 *(fh(i-2,j-1,k)-F8*fh(i-1,j-1,k)+F8*fh(i+1,j-1,k)-fh(i+2,j-1,k)) &
+                 +F8 *(fh(i-2,j+1,k)-F8*fh(i-1,j+1,k)+F8*fh(i+1,j+1,k)-fh(i+2,j+1,k)) &
+                 -    (fh(i-2,j+2,k)-F8*fh(i-1,j+2,k)+F8*fh(i+1,j+2,k)-fh(i+2,j+2,k)))
+    mixed = gupxy(i,j,k)*dxy
+    dxz = Fdxdz*(     (fh(i-2,j,k-2)-F8*fh(i-1,j,k-2)+F8*fh(i+1,j,k-2)-fh(i+2,j,k-2)) &
+                 -F8 *(fh(i-2,j,k-1)-F8*fh(i-1,j,k-1)+F8*fh(i+1,j,k-1)-fh(i+2,j,k-1)) &
+                 +F8 *(fh(i-2,j,k+1)-F8*fh(i-1,j,k+1)+F8*fh(i+1,j,k+1)-fh(i+2,j,k+1)) &
+                 -    (fh(i-2,j,k+2)-F8*fh(i-1,j,k+2)+F8*fh(i+1,j,k+2)-fh(i+2,j,k+2)))
+    mixed = mixed + gupxz(i,j,k)*dxz
+    dyz = Fdydz*(     (fh(i,j-2,k-2)-F8*fh(i,j-1,k-2)+F8*fh(i,j+1,k-2)-fh(i,j+2,k-2)) &
+                 -F8 *(fh(i,j-2,k-1)-F8*fh(i,j-1,k-1)+F8*fh(i,j+1,k-1)-fh(i,j+2,k-1)) &
+                 +F8 *(fh(i,j-2,k+1)-F8*fh(i,j-1,k+1)+F8*fh(i,j+1,k+1)-fh(i,j+2,k+1)) &
+                 -    (fh(i,j-2,k+2)-F8*fh(i,j-1,k+2)+F8*fh(i,j+1,k+2)-fh(i,j+2,k+2)))
+    contract(i,j,k) = diag + (mixed + gupyz(i,j,k)*dyz)*TWO
+  enddo
+  enddo
+  enddo
+
+  do k=1,ex(3)-1
+  do j=1,ex(2)-1
+  do i=1,ex(1)-1
+    if(i>=3 .and. i<=ex(1)-2 .and. &
+       j>=3 .and. j<=ex(2)-2 .and. &
+       k>=3 .and. k<=ex(3)-2) cycle
+    if(i+2 <= imax .and. i-2 >= imin .and. &
+       j+2 <= jmax .and. j-2 >= jmin .and. &
+       k+2 <= kmax .and. k-2 >= kmin) then
+      dxx = Fdxdx*(-fh(i-2,j,k)+F16*fh(i-1,j,k)-F30*fh(i,j,k) &
+                   -fh(i+2,j,k)+F16*fh(i+1,j,k))
+      dyy = Fdydy*(-fh(i,j-2,k)+F16*fh(i,j-1,k)-F30*fh(i,j,k) &
+                   -fh(i,j+2,k)+F16*fh(i,j+1,k))
+      dzz = Fdzdz*(-fh(i,j,k-2)+F16*fh(i,j,k-1)-F30*fh(i,j,k) &
+                   -fh(i,j,k+2)+F16*fh(i,j,k+1))
+      diag = gupxx(i,j,k)*dxx + gupyy(i,j,k)*dyy + gupzz(i,j,k)*dzz
+      dxy = Fdxdy*(     (fh(i-2,j-2,k)-F8*fh(i-1,j-2,k)+F8*fh(i+1,j-2,k)-fh(i+2,j-2,k)) &
+                   -F8 *(fh(i-2,j-1,k)-F8*fh(i-1,j-1,k)+F8*fh(i+1,j-1,k)-fh(i+2,j-1,k)) &
+                   +F8 *(fh(i-2,j+1,k)-F8*fh(i-1,j+1,k)+F8*fh(i+1,j+1,k)-fh(i+2,j+1,k)) &
+                   -    (fh(i-2,j+2,k)-F8*fh(i-1,j+2,k)+F8*fh(i+1,j+2,k)-fh(i+2,j+2,k)))
+      mixed = gupxy(i,j,k)*dxy
+      dxz = Fdxdz*(     (fh(i-2,j,k-2)-F8*fh(i-1,j,k-2)+F8*fh(i+1,j,k-2)-fh(i+2,j,k-2)) &
+                   -F8 *(fh(i-2,j,k-1)-F8*fh(i-1,j,k-1)+F8*fh(i+1,j,k-1)-fh(i+2,j,k-1)) &
+                   +F8 *(fh(i-2,j,k+1)-F8*fh(i-1,j,k+1)+F8*fh(i+1,j,k+1)-fh(i+2,j,k+1)) &
+                   -    (fh(i-2,j,k+2)-F8*fh(i-1,j,k+2)+F8*fh(i+1,j,k+2)-fh(i+2,j,k+2)))
+      mixed = mixed + gupxz(i,j,k)*dxz
+      dyz = Fdydz*(     (fh(i,j-2,k-2)-F8*fh(i,j-1,k-2)+F8*fh(i,j+1,k-2)-fh(i,j+2,k-2)) &
+                   -F8 *(fh(i,j-2,k-1)-F8*fh(i,j-1,k-1)+F8*fh(i,j+1,k-1)-fh(i,j+2,k-1)) &
+                   +F8 *(fh(i,j-2,k+1)-F8*fh(i,j-1,k+1)+F8*fh(i,j+1,k+1)-fh(i,j+2,k+1)) &
+                   -    (fh(i,j-2,k+2)-F8*fh(i,j-1,k+2)+F8*fh(i,j+1,k+2)-fh(i,j+2,k+2)))
+    elseif(i+1 <= imax .and. i-1 >= imin .and. &
+           j+1 <= jmax .and. j-1 >= jmin .and. &
+           k+1 <= kmax .and. k-1 >= kmin) then
+      dxx = Sdxdx*(fh(i-1,j,k)-TWO*fh(i,j,k)+fh(i+1,j,k))
+      dyy = Sdydy*(fh(i,j-1,k)-TWO*fh(i,j,k)+fh(i,j+1,k))
+      dzz = Sdzdz*(fh(i,j,k-1)-TWO*fh(i,j,k)+fh(i,j,k+1))
+      dxy = Sdxdy*(fh(i-1,j-1,k)-fh(i+1,j-1,k)-fh(i-1,j+1,k)+fh(i+1,j+1,k))
+      dxz = Sdxdz*(fh(i-1,j,k-1)-fh(i+1,j,k-1)-fh(i-1,j,k+1)+fh(i+1,j,k+1))
+      dyz = Sdydz*(fh(i,j-1,k-1)-fh(i,j+1,k-1)-fh(i,j-1,k+1)+fh(i,j+1,k+1))
+    else
+      cycle
+    endif
+    diag = gupxx(i,j,k)*dxx + gupyy(i,j,k)*dyy + gupzz(i,j,k)*dzz
+    mixed = gupxy(i,j,k)*dxy + gupxz(i,j,k)*dxz
+    contract(i,j,k) = diag + (mixed + gupyz(i,j,k)*dyz)*TWO
+  enddo
+  enddo
+  enddo
+
+  return
+  end subroutine fdderivs_metric_contract
+#endif
+
+#if (ghost_width == 2)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! only for compute_ricci.f90 usage
 !-----------------------------------------------------------------------------
