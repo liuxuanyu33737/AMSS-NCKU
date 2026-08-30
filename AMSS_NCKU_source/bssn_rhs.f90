@@ -375,22 +375,29 @@
   gzzz = gxz * Gamxzz + gyz * Gamyzz + gzz * Gamzzz
 
 !compute Ricci tensor for tilted metric
-   call fdderivs_metric_contract(ex,dxx,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,Rxx, &
-                                 X,Y,Z,SYM,SYM,SYM,symmetry,Lev)
-   call fdderivs_metric_contract(ex,dyy,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,Ryy, &
-                                 X,Y,Z,SYM,SYM,SYM,symmetry,Lev)
+   call fdderivs(ex,dxx,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM ,SYM ,SYM ,symmetry,Lev)
+   Rxx =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
+         ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
 
-   call fdderivs_metric_contract(ex,dzz,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,Rzz, &
-                                 X,Y,Z,SYM,SYM,SYM,symmetry,Lev)
+   call fdderivs(ex,dyy,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM ,SYM ,SYM ,symmetry,Lev)
+   Ryy =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
+         ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
 
-   call fdderivs_metric_contract(ex,gxy,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,Rxy, &
-                                 X,Y,Z,ANTI,ANTI,SYM,symmetry,Lev)
+   call fdderivs(ex,dzz,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM ,SYM ,SYM ,symmetry,Lev)
+   Rzz =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
+         ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
 
-   call fdderivs_metric_contract(ex,gxz,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,Rxz, &
-                                 X,Y,Z,ANTI,SYM,ANTI,symmetry,Lev)
+   call fdderivs(ex,gxy,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,ANTI, ANTI,SYM ,symmetry,Lev)
+   Rxy =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
+         ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
 
-   call fdderivs_metric_contract(ex,gyz,gupxx,gupxy,gupxz,gupyy,gupyz,gupzz,Ryz, &
-                                 X,Y,Z,SYM,ANTI,ANTI,symmetry,Lev)
+   call fdderivs(ex,gxz,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,ANTI ,SYM ,ANTI,symmetry,Lev)
+   Rxz =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
+         ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
+
+   call fdderivs(ex,gyz,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM ,ANTI ,ANTI,symmetry,Lev)
+   Ryz =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
+         ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
 
   Rxx =     - HALF * Rxx                                   + &
                gxx * Gamxx+ gxy * Gamyx   +    gxz * Gamzx + &
