@@ -98,7 +98,9 @@
 !~~~~~~% Input parameters:
 
   integer ,intent(in):: ex(1:3),RK4
+  integer :: i,j,k
   real*8  ,intent(in):: dT
+  real*8 :: f1old,f1new,rhsnew
   real*8, dimension(ex(1),ex(2),ex(3)),intent(in) ::f0
   real*8, dimension(ex(1),ex(2),ex(3)),intent(inout) ::f_rhs
   real*8, dimension(ex(1),ex(2),ex(3)),intent(inout) ::f1
@@ -113,15 +115,31 @@
 
   elseif(RK4 == 1 ) then
 
-   f_rhs = f_rhs + TWO * f1
-
-   f1 = f0 + HLF * dT * f1
+   do k=1,ex(3)
+   do j=1,ex(2)
+   do i=1,ex(1)
+    f1old = f1(i,j,k)
+    rhsnew = f_rhs(i,j,k) + TWO * f1old
+    f1new = f0(i,j,k) + HLF * dT * f1old
+    f_rhs(i,j,k) = rhsnew
+    f1(i,j,k) = f1new
+   enddo
+   enddo
+   enddo
 
   elseif(RK4 == 2 ) then
 
-   f_rhs = f_rhs + TWO * f1
-
-   f1 = f0 +       dT * f1
+   do k=1,ex(3)
+   do j=1,ex(2)
+   do i=1,ex(1)
+    f1old = f1(i,j,k)
+    rhsnew = f_rhs(i,j,k) + TWO * f1old
+    f1new = f0(i,j,k) + dT * f1old
+    f_rhs(i,j,k) = rhsnew
+    f1(i,j,k) = f1new
+   enddo
+   enddo
+   enddo
 
   elseif( RK4 == 3 ) then
  
