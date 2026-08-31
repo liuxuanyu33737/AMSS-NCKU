@@ -201,6 +201,8 @@ subroutine lopsided(ex,X,Y,Z,f,f_rhs,Sfx,Sfy,Sfz,Symmetry,SoA)
   integer :: imin,jmin,kmin,imax,jmax,kmax,i,j,k
   real*8 :: dX,dY,dZ
   real*8 :: d12dx,d12dy,d12dz,d2dx,d2dy,d2dz
+  real*8 :: s,fm1,fp1,fm2,fp2,fm3,fp3,stencil,updated
+  integer(kind=8) :: negmask,nzmask
   real*8,  parameter :: ZEO=0.d0,ONE=1.d0, F3=3.d0
   real*8,  parameter :: TWO=2.d0,F6=6.0d0,F18=1.8d1
   real*8,  parameter :: F12=1.2d1, F10=1.d1,EIT=8.d0
@@ -231,7 +233,114 @@ subroutine lopsided(ex,X,Y,Z,f,f_rhs,Sfx,Sfy,Sfz,Symmetry,SoA)
 
   call symmetry_bd(3,ex,f,fh,SoA)
 
-! upper bound set ex-1 only for efficiency, 
+#if 1
+! The common regular fourth-order interior is separated from the exact
+! boundary fallback.  Keeping x/y/z updates together preserves their original
+! floating-point accumulation order.  MERGE_BITS removes the sign branches
+! while evaluating only one selected stencil per direction.
+  do k=4,ex(3)-3
+  do j=4,ex(2)-3
+  do i=4,ex(1)-3
+    s=Sfx(i,j,k)
+    negmask=merge(-1_8,0_8,s<ZEO)
+    nzmask=merge(-1_8,0_8,s/=ZEO)
+    fm1=transfer(merge_bits(transfer(fh(i+1,j,k),negmask),transfer(fh(i-1,j,k),negmask),negmask),fm1)
+    fp1=transfer(merge_bits(transfer(fh(i-1,j,k),negmask),transfer(fh(i+1,j,k),negmask),negmask),fp1)
+    fp2=transfer(merge_bits(transfer(fh(i-2,j,k),negmask),transfer(fh(i+2,j,k),negmask),negmask),fp2)
+    fp3=transfer(merge_bits(transfer(fh(i-3,j,k),negmask),transfer(fh(i+3,j,k),negmask),negmask),fp3)
+    stencil=-F3*fm1-F10*fh(i,j,k)+F18*fp1-F6*fp2+fp3
+    updated=f_rhs(i,j,k)+dabs(s)*d12dx*stencil
+    f_rhs(i,j,k)=transfer(merge_bits(transfer(updated,nzmask),transfer(f_rhs(i,j,k),nzmask),nzmask),updated)
+
+    s=Sfy(i,j,k)
+    negmask=merge(-1_8,0_8,s<ZEO)
+    nzmask=merge(-1_8,0_8,s/=ZEO)
+    fm1=transfer(merge_bits(transfer(fh(i,j+1,k),negmask),transfer(fh(i,j-1,k),negmask),negmask),fm1)
+    fp1=transfer(merge_bits(transfer(fh(i,j-1,k),negmask),transfer(fh(i,j+1,k),negmask),negmask),fp1)
+    fp2=transfer(merge_bits(transfer(fh(i,j-2,k),negmask),transfer(fh(i,j+2,k),negmask),negmask),fp2)
+    fp3=transfer(merge_bits(transfer(fh(i,j-3,k),negmask),transfer(fh(i,j+3,k),negmask),negmask),fp3)
+    stencil=-F3*fm1-F10*fh(i,j,k)+F18*fp1-F6*fp2+fp3
+    updated=f_rhs(i,j,k)+dabs(s)*d12dy*stencil
+    f_rhs(i,j,k)=transfer(merge_bits(transfer(updated,nzmask),transfer(f_rhs(i,j,k),nzmask),nzmask),updated)
+
+    s=Sfz(i,j,k)
+    negmask=merge(-1_8,0_8,s<ZEO)
+    nzmask=merge(-1_8,0_8,s/=ZEO)
+    fm1=transfer(merge_bits(transfer(fh(i,j,k+1),negmask),transfer(fh(i,j,k-1),negmask),negmask),fm1)
+    fp1=transfer(merge_bits(transfer(fh(i,j,k-1),negmask),transfer(fh(i,j,k+1),negmask),negmask),fp1)
+    fp2=transfer(merge_bits(transfer(fh(i,j,k-2),negmask),transfer(fh(i,j,k+2),negmask),negmask),fp2)
+    fp3=transfer(merge_bits(transfer(fh(i,j,k-3),negmask),transfer(fh(i,j,k+3),negmask),negmask),fp3)
+    stencil=-F3*fm1-F10*fh(i,j,k)+F18*fp1-F6*fp2+fp3
+    updated=f_rhs(i,j,k)+dabs(s)*d12dz*stencil
+    f_rhs(i,j,k)=transfer(merge_bits(transfer(updated,nzmask),transfer(f_rhs(i,j,k),nzmask),nzmask),updated)
+  enddo
+  enddo
+  enddo
+
+! Exact original boundary/fallback behavior for all three directions.
+  do k=1,ex(3)-1
+  do j=1,ex(2)-1
+  do i=1,ex(1)-1
+    if(i>=4 .and. i<=ex(1)-3 .and. j>=4 .and. j<=ex(2)-3 .and. &
+       k>=4 .and. k<=ex(3)-3) cycle
+      if(Sfx(i,j,k)>ZEO) then
+        if(i+3<=imax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfx(i,j,k)*d12dx*(-F3*fh(i-1,j,k)-F10*fh(i,j,k)+F18*fh(i+1,j,k)-F6*fh(i+2,j,k)+fh(i+3,j,k))
+        elseif(i+2<=imax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfx(i,j,k)*d12dx*(fh(i-2,j,k)-EIT*fh(i-1,j,k)+EIT*fh(i+1,j,k)-fh(i+2,j,k))
+        elseif(i+1<=imax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)-Sfx(i,j,k)*d12dx*(-F3*fh(i+1,j,k)-F10*fh(i,j,k)+F18*fh(i-1,j,k)-F6*fh(i-2,j,k)+fh(i-3,j,k))
+        endif
+      elseif(Sfx(i,j,k)<ZEO) then
+        if(i-3>=imin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)-Sfx(i,j,k)*d12dx*(-F3*fh(i+1,j,k)-F10*fh(i,j,k)+F18*fh(i-1,j,k)-F6*fh(i-2,j,k)+fh(i-3,j,k))
+        elseif(i-2>=imin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfx(i,j,k)*d12dx*(fh(i-2,j,k)-EIT*fh(i-1,j,k)+EIT*fh(i+1,j,k)-fh(i+2,j,k))
+        elseif(i-1>=imin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfx(i,j,k)*d12dx*(-F3*fh(i-1,j,k)-F10*fh(i,j,k)+F18*fh(i+1,j,k)-F6*fh(i+2,j,k)+fh(i+3,j,k))
+        endif
+      endif
+
+      if(Sfy(i,j,k)>ZEO) then
+        if(j+3<=jmax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfy(i,j,k)*d12dy*(-F3*fh(i,j-1,k)-F10*fh(i,j,k)+F18*fh(i,j+1,k)-F6*fh(i,j+2,k)+fh(i,j+3,k))
+        elseif(j+2<=jmax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfy(i,j,k)*d12dy*(fh(i,j-2,k)-EIT*fh(i,j-1,k)+EIT*fh(i,j+1,k)-fh(i,j+2,k))
+        elseif(j+1<=jmax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)-Sfy(i,j,k)*d12dy*(-F3*fh(i,j+1,k)-F10*fh(i,j,k)+F18*fh(i,j-1,k)-F6*fh(i,j-2,k)+fh(i,j-3,k))
+        endif
+      elseif(Sfy(i,j,k)<ZEO) then
+        if(j-3>=jmin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)-Sfy(i,j,k)*d12dy*(-F3*fh(i,j+1,k)-F10*fh(i,j,k)+F18*fh(i,j-1,k)-F6*fh(i,j-2,k)+fh(i,j-3,k))
+        elseif(j-2>=jmin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfy(i,j,k)*d12dy*(fh(i,j-2,k)-EIT*fh(i,j-1,k)+EIT*fh(i,j+1,k)-fh(i,j+2,k))
+        elseif(j-1>=jmin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfy(i,j,k)*d12dy*(-F3*fh(i,j-1,k)-F10*fh(i,j,k)+F18*fh(i,j+1,k)-F6*fh(i,j+2,k)+fh(i,j+3,k))
+        endif
+      endif
+
+      if(Sfz(i,j,k)>ZEO) then
+        if(k+3<=kmax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfz(i,j,k)*d12dz*(-F3*fh(i,j,k-1)-F10*fh(i,j,k)+F18*fh(i,j,k+1)-F6*fh(i,j,k+2)+fh(i,j,k+3))
+        elseif(k+2<=kmax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfz(i,j,k)*d12dz*(fh(i,j,k-2)-EIT*fh(i,j,k-1)+EIT*fh(i,j,k+1)-fh(i,j,k+2))
+        elseif(k+1<=kmax) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)-Sfz(i,j,k)*d12dz*(-F3*fh(i,j,k+1)-F10*fh(i,j,k)+F18*fh(i,j,k-1)-F6*fh(i,j,k-2)+fh(i,j,k-3))
+        endif
+      elseif(Sfz(i,j,k)<ZEO) then
+        if(k-3>=kmin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)-Sfz(i,j,k)*d12dz*(-F3*fh(i,j,k+1)-F10*fh(i,j,k)+F18*fh(i,j,k-1)-F6*fh(i,j,k-2)+fh(i,j,k-3))
+        elseif(k-2>=kmin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfz(i,j,k)*d12dz*(fh(i,j,k-2)-EIT*fh(i,j,k-1)+EIT*fh(i,j,k+1)-fh(i,j,k+2))
+        elseif(k-1>=kmin) then
+          f_rhs(i,j,k)=f_rhs(i,j,k)+Sfz(i,j,k)*d12dz*(-F3*fh(i,j,k-1)-F10*fh(i,j,k)+F18*fh(i,j,k+1)-F6*fh(i,j,k+2)+fh(i,j,k+3))
+        endif
+      endif
+  enddo
+  enddo
+  enddo
+#else
+! upper bound set ex-1 only for efficiency,
 ! the loop body will set ex 0 also
   do k=1,ex(3)-1
   do j=1,ex(2)-1
@@ -482,6 +591,7 @@ subroutine lopsided(ex,X,Y,Z,f,f_rhs,Sfx,Sfy,Sfz,Symmetry,SoA)
   enddo
   enddo
   enddo
+#endif
 
   return
 
