@@ -2037,8 +2037,7 @@
 !~~~~~~> prolongation start...
   do k = kmino,kmaxo
    do j = jmino,jmaxo
-    i = imino
-    do while (i <= imaxo)
+    do i = imino,imaxo
        cxI(1) = i
        cxI(2) = j
        cxI(3) = k
@@ -2166,22 +2165,6 @@
              funf(i,j,k)= C1*tmp1(1)+C2*tmp1(2)+C3*tmp1(3)+C4*tmp1(4)+C5*tmp1(5)+C6*tmp1(6)
        else
              funf(i,j,k)= C6*tmp1(1)+C5*tmp1(2)+C4*tmp1(3)+C3*tmp1(4)+C2*tmp1(5)+C1*tmp1(6)
-       endif
-
-! Adjacent fine points which map to the same coarse point use the same
-! z- and y-interpolation results.  Reuse tmp1 and only apply the mirrored
-! x weights for the second point.
-       if(i < imaxo .and. &
-          (i+lbf(1))/2-lbc(1)+1 == cxI(1))then
-          ii=i+lbf(1)
-          if(ii/2*2==ii)then
-                funf(i+1,j,k)= C1*tmp1(1)+C2*tmp1(2)+C3*tmp1(3)+C4*tmp1(4)+C5*tmp1(5)+C6*tmp1(6)
-          else
-                funf(i+1,j,k)= C6*tmp1(1)+C5*tmp1(2)+C4*tmp1(3)+C3*tmp1(4)+C2*tmp1(5)+C1*tmp1(6)
-          endif
-          i=i+2
-       else
-          i=i+1
        endif
 #endif
     enddo
