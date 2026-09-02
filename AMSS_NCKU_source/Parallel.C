@@ -3713,74 +3713,18 @@ void Parallel::Sync(Patch *Pat, MyList<var> *VarList, int Symmetry)
 }
 void Parallel::Sync(MyList<Patch> *PatL, MyList<var> *VarList, int Symmetry)
 {
-  int cpusize;
-  MPI_Comm_size(MPI_COMM_WORLD, &cpusize);
-
-  // Patch inner Synch.  Build each patch's intersections independently, then
-  // concatenate only the already-filtered paired lists for one batched transfer.
-  MyList<Parallel::gridseg> **batch_src, **batch_dst;
-  MyList<Parallel::gridseg> **patch_owned, **patch_src, **patch_dst;
-  batch_src = new MyList<Parallel::gridseg> *[cpusize];
-  batch_dst = new MyList<Parallel::gridseg> *[cpusize];
-  patch_owned = new MyList<Parallel::gridseg> *[cpusize];
-  patch_src = new MyList<Parallel::gridseg> *[cpusize];
-  patch_dst = new MyList<Parallel::gridseg> *[cpusize];
-
-  for (int node = 0; node < cpusize; node++)
-  {
-    batch_src[node] = 0;
-    batch_dst[node] = 0;
-  }
-
+  // Patch inner Synch
   MyList<Patch> *Pp = PatL;
   while (Pp)
   {
-    MyList<Parallel::gridseg> *ghost = build_ghost_gsl(Pp->data);
-    for (int node = 0; node < cpusize; node++)
-    {
-      patch_owned[node] = build_owned_gsl0(Pp->data, node);
-      build_gstl(patch_owned[node], ghost, &patch_src[node], &patch_dst[node]);
-
-      if (patch_src[node])
-      {
-        if (batch_src[node])
-        {
-          batch_src[node]->catList(patch_src[node]);
-          batch_dst[node]->catList(patch_dst[node]);
-        }
-        else
-        {
-          batch_src[node] = patch_src[node];
-          batch_dst[node] = patch_dst[node];
-        }
-      }
-    }
-
-    if (ghost)
-      ghost->destroyList();
-    for (int node = 0; node < cpusize; node++)
-      if (patch_owned[node])
-        patch_owned[node]->destroyList();
-
+    Sync(Pp->data, VarList, Symmetry);
     Pp = Pp->next;
   }
 
-  transfer(batch_src, batch_dst, VarList, VarList, Symmetry);
-
-  for (int node = 0; node < cpusize; node++)
-  {
-    if (batch_src[node])
-      batch_src[node]->destroyList();
-    if (batch_dst[node])
-      batch_dst[node]->destroyList();
-  }
-  delete[] batch_src;
-  delete[] batch_dst;
-  delete[] patch_owned;
-  delete[] patch_src;
-  delete[] patch_dst;
-
   // Patch inter Synch
+  int cpusize;
+  MPI_Comm_size(MPI_COMM_WORLD, &cpusize);
+
   MyList<Parallel::gridseg> *dst;
   MyList<Parallel::gridseg> **src, **transfer_src, **transfer_dst;
   src = new MyList<Parallel::gridseg> *[cpusize];
