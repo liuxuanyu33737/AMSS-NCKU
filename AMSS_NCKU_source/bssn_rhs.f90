@@ -61,7 +61,7 @@
   real*8, dimension(ex(1),ex(2),ex(3)),intent(inout) :: ham_Res, movx_Res, movy_Res, movz_Res
   real*8, dimension(ex(1),ex(2),ex(3)),intent(inout) :: Gmx_Res, Gmy_Res, Gmz_Res
 !  gont = 0: success; gont = 1: something wrong
-  integer::gont,i,j,k
+  integer::gont
 
 !~~~~~~> Other variables:
 
@@ -97,7 +97,7 @@
 #endif
 
 #if (GAUGE == 6 || GAUGE == 7)
-  integer :: BHN
+  integer :: BHN,i,j,k
   real*8, dimension(9) :: Porg
   real*8, dimension(3) :: Mass
   real*8 :: r1,r2,M,A,w1,w2,C1,C2
@@ -166,47 +166,29 @@
   call fderivs(ex,gyz,gyzx,gyzy,gyzz,X,Y,Z,SYM ,ANTI,ANTI,Symmetry,Lev)
   call fderivs(ex,dzz,gzzx,gzzy,gzzz,X,Y,Z,SYM ,SYM ,SYM ,Symmetry,Lev)
 
-  do k=1,ex(3)
-  do j=1,ex(2)
-  do i=1,ex(1)
-    gxx_rhs(i,j,k) = - TWO * alpn1(i,j,k) * Axx(i,j,k)             &
-         - F2o3 * gxx(i,j,k) * div_beta(i,j,k)                     &
-         + TWO *(gxx(i,j,k) * betaxx(i,j,k)                        &
-                +gxy(i,j,k) * betayx(i,j,k)                        &
-                +gxz(i,j,k) * betazx(i,j,k))
+  gxx_rhs = - TWO * alpn1 * Axx    -  F2o3 * gxx * div_beta          + &
+              TWO *(  gxx * betaxx +   gxy * betayx +   gxz * betazx)
 
-    gyy_rhs(i,j,k) = - TWO * alpn1(i,j,k) * Ayy(i,j,k)             &
-         - F2o3 * gyy(i,j,k) * div_beta(i,j,k)                     &
-         + TWO *(gxy(i,j,k) * betaxy(i,j,k)                        &
-                +gyy(i,j,k) * betayy(i,j,k)                        &
-                +gyz(i,j,k) * betazy(i,j,k))
+  gyy_rhs = - TWO * alpn1 * Ayy    -  F2o3 * gyy * div_beta          + &
+              TWO *(  gxy * betaxy +   gyy * betayy +   gyz * betazy)
 
-    gzz_rhs(i,j,k) = - TWO * alpn1(i,j,k) * Azz(i,j,k)             &
-         - F2o3 * gzz(i,j,k) * div_beta(i,j,k)                     &
-         + TWO *(gxz(i,j,k) * betaxz(i,j,k)                        &
-                +gyz(i,j,k) * betayz(i,j,k)                        &
-                +gzz(i,j,k) * betazz(i,j,k))
+  gzz_rhs = - TWO * alpn1 * Azz    -  F2o3 * gzz * div_beta          + &
+              TWO *(  gxz * betaxz +   gyz * betayz +   gzz * betazz)
 
-    gxy_rhs(i,j,k) = - TWO * alpn1(i,j,k) * Axy(i,j,k)             &
-         + F1o3 * gxy(i,j,k) * div_beta(i,j,k)                     &
-         + gxx(i,j,k) * betaxy(i,j,k) + gxz(i,j,k) * betazy(i,j,k)&
-         + gyy(i,j,k) * betayx(i,j,k) + gyz(i,j,k) * betazx(i,j,k)&
-         - gxy(i,j,k) * betazz(i,j,k)
+  gxy_rhs = - TWO * alpn1 * Axy    +  F1o3 * gxy    * div_beta       + &
+                      gxx * betaxy                  +   gxz * betazy + &
+                                       gyy * betayx +   gyz * betazx   &
+                                                    -   gxy * betazz
 
-    gyz_rhs(i,j,k) = - TWO * alpn1(i,j,k) * Ayz(i,j,k)             &
-         + F1o3 * gyz(i,j,k) * div_beta(i,j,k)                     &
-         + gxy(i,j,k) * betaxz(i,j,k) + gyy(i,j,k) * betayz(i,j,k)&
-         + gxz(i,j,k) * betaxy(i,j,k) + gzz(i,j,k) * betazy(i,j,k)&
-         - gyz(i,j,k) * betaxx(i,j,k)
-
-    gxz_rhs(i,j,k) = - TWO * alpn1(i,j,k) * Axz(i,j,k)             &
-         + F1o3 * gxz(i,j,k) * div_beta(i,j,k)                     &
-         + gxx(i,j,k) * betaxz(i,j,k) + gxy(i,j,k) * betayz(i,j,k)&
-         + gyz(i,j,k) * betayx(i,j,k) + gzz(i,j,k) * betazx(i,j,k)&
-         - gxz(i,j,k) * betayy(i,j,k)
-  enddo
-  enddo
-  enddo                                                            ! rhs for gij
+  gyz_rhs = - TWO * alpn1 * Ayz    +  F1o3 * gyz    * div_beta       + &
+                      gxy * betaxz +   gyy * betayz                  + &
+                      gxz * betaxy                  +   gzz * betazy   &
+                                                    -   gyz * betaxx
+ 
+  gxz_rhs = - TWO * alpn1 * Axz    +  F1o3 * gxz    * div_beta       + &
+                      gxx * betaxz +   gxy * betayz                  + &
+                                       gyz * betayx +   gzz * betazx   &
+                                                    -   gxz * betayy     !rhs for gij
 
 ! invert tilted metric
   gupzz =  gxx * gyy * gzz + gxy * gyz * gxz + gxz * gxy * gyz - &
