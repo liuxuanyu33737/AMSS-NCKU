@@ -170,13 +170,8 @@ ldd ./ABE | egrep 'gomp|omp|openblas|mkl|blas'
 - 仅靠 MPI 参数优化不足以达到 2x；
 - 后续需要继续进行源码级、通信级或 GPU 架构优化。
 
-## 8. Zero Point 路线说明
 
-这一阶段参考了 Zero Point ASC26 公开方案关于 MPI rank 数量选择、LTO、process pinning 和 thread control 的优化思路，并未复制对方代码。
-
-Zero Point 报告的 2.59x 很大一部分来自其特定硬件上的 MPI 进程数量调整（例如 4 → 16 cores）。其硬件与当前 i7-14650HX + WSL 环境不同，因此不能期待直接复现相同的 2.59x；当前项目实际测试结果以本机数据为准。
-
-## 9. V4 → 当前 V5 源码状态审查
+## 8. V4 → 当前 V5 源码状态审查
 
 以 `optimize-v4` 与当前 `optimize-v5` 的已提交历史进行比较，V5 阶段进行过若干结构性源码实验，包括 metric temporary、lopsided SIMD、RK4 traversal、prolong3 paired-x reuse、MPI Sync batching 和 conformal metric RHS traversal。上述实验均已在提交历史中回滚；当前从 V4 到 V5 的已提交净差异只有相关审计和回滚说明文档，没有保留下来的净源码差异。
 
