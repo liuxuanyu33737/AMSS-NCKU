@@ -70,8 +70,6 @@ baseline 相比早期记录明显变慢。目前无法确认造成 baseline 变�
 
 ## 4. Process Pinning / MPI 绑核优化
 
-这是 V5 阶段根据 Zero Point ASC26 优化思路进行的系统级优化。
-
 ### 8 rank 默认方式
 
 - Total Evolve Time = 757.344 s；
