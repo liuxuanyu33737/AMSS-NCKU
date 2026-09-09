@@ -21,6 +21,7 @@ using namespace std;
 #include <map.h>
 #endif
 #include <mpi.h>
+#include <cstdio>
 
 #include "misc.h"
 #include "cgh.h"
@@ -32,6 +33,139 @@ using namespace std;
 #include "parameters.h"
 
 #define PI M_PI
+#ifndef ENABLE_ABE_PROFILING
+#define ENABLE_ABE_PROFILING 0
+#endif
+#if ENABLE_ABE_PROFILING
+#define ABE_PROFILE_WTIME() (MPI_Wtime)()
+#else
+#define ABE_PROFILE_WTIME() (0.0)
+#endif
+
+#if ENABLE_ABE_PROFILING
+//|----------------------------------------------------------------------------
+//| Level-4 profiling of surf_MassPAng(): fine-grained MPI_Wtime breakdown.
+//| This is profiling-only instrumentation; no algorithm is changed.  The
+//| cgh* / MPI_COMM_WORLD overload (PSTR == 0, no WithShell) used by the ABE
+//| analysis path is split into meaningful stages.  Every MPI_Allreduce call
+//| is timed separately.  Statistics are printed once at the end of the run
+//| through abe_l4_surf_mass_report(), called from abe_wtime_prof.h.
+//|----------------------------------------------------------------------------
+
+// Level-5 profiling lives inside Patch::Interp_Points() (MPatch.C).  The mark
+// below is armed once per call, just before the single Interp_Points() call in
+// the cgh / MPI_COMM_WORLD overload, so only that interpolation work is timed.
+void abe_l5_interp_mark(void);
+void abe_l5_interp_report(int myrank, int nprocs);
+#define ABE_L4S_NPHASE 14
+
+enum
+{
+  ABE_L4S_TOTAL   = 0,  // whole surf_MassPAng call
+  ABE_L4S_VOLUME  = 1,  // f_admmass_bssn volume integrand on local blocks
+  ABE_L4S_PREP    = 2,  // DG_List / pox / shellf setup before interpolation
+  ABE_L4S_INTERP  = 3,  // Interp_Points surface interpolation (n_tot points)
+  ABE_L4S_SPHERE  = 4,  // local accumulation loop before the Allreduces
+  ABE_L4S_AR1     = 5,  // MPI_Allreduce Mass_out (ADM mass)
+  ABE_L4S_AR2     = 6,  // MPI_Allreduce ang_outx (Sx)
+  ABE_L4S_AR3     = 7,  // MPI_Allreduce ang_outy (Sy)
+  ABE_L4S_AR4     = 8,  // MPI_Allreduce ang_outz (Sz)
+  ABE_L4S_AR5     = 9,  // MPI_Allreduce p_outx   (Px)
+  ABE_L4S_AR6     = 10, // MPI_Allreduce p_outy   (Py)
+  ABE_L4S_AR7     = 11, // MPI_Allreduce p_outz   (Pz)
+  ABE_L4S_POST    = 12, // post-Allreduce scaling and Rout[] fill
+  ABE_L4S_CLEANUP = 13  // delete pox / shellf and DG_List->clearList
+};
+
+static const char *abe_l4s_name[ABE_L4S_NPHASE] =
+{
+  "surf_masspang_total",
+  "volume_f_admmass",
+  "prep_arrays",
+  "interp_points",
+  "sphere_local_loop",
+  "mpi_allreduce_mass",
+  "mpi_allreduce_sx",
+  "mpi_allreduce_sy",
+  "mpi_allreduce_sz",
+  "mpi_allreduce_px",
+  "mpi_allreduce_py",
+  "mpi_allreduce_pz",
+  "post_process",
+  "cleanup"
+};
+
+static long long abe_l4s_cnt[ABE_L4S_NPHASE] = {0};
+static double abe_l4s_tot[ABE_L4S_NPHASE] = {0.0};
+static double abe_l4s_min[ABE_L4S_NPHASE] = {0.0};
+static double abe_l4s_max[ABE_L4S_NPHASE] = {0.0};
+
+static void abe_l4s_rec(int ph, double t0)
+{
+  const double dt = MPI_Wtime() - t0;
+  const long long c = abe_l4s_cnt[ph]++;
+  abe_l4s_tot[ph] += dt;
+  if (c == 0 || dt < abe_l4s_min[ph])
+    abe_l4s_min[ph] = dt;
+  if (dt > abe_l4s_max[ph])
+    abe_l4s_max[ph] = dt;
+}
+
+// Reduce the per-rank Level-4 accumulators and print the report on rank 0.
+// All MPI ranks call this together (invoked from abe_prof_report at the end
+// of bssn_class::Evolve, after the level-3 report).
+void abe_l4_surf_mass_report(int myrank, int nprocs)
+{
+  const int n = ABE_L4S_NPHASE;
+
+  long long loc_cnt[n], gl_cnt[n];
+  double loc_tot[n], gl_tot[n], loc_min[n], gl_min[n];
+  double loc_max[n], gl_max[n], gl_totmax[n];
+
+  for (int i = 0; i < n; ++i)
+  {
+    loc_cnt[i] = abe_l4s_cnt[i];
+    loc_tot[i] = abe_l4s_tot[i];
+    loc_min[i] = (abe_l4s_cnt[i] > 0) ? abe_l4s_min[i] : 0.0;
+    loc_max[i] = (abe_l4s_cnt[i] > 0) ? abe_l4s_max[i] : 0.0;
+  }
+
+  MPI_Reduce(loc_cnt, gl_cnt, n, MPI_LONG_LONG_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(loc_tot, gl_tot, n, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  MPI_Reduce(loc_tot, gl_totmax, n, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(loc_min, gl_min, n, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+  MPI_Reduce(loc_max, gl_max, n, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+
+  if (myrank == 0)
+  {
+    printf("\n===== Level-4 profile: surf_MassPAng (nprocs = %d) =====\n", nprocs);
+    printf("%-22s %12s %14s %14s %14s %14s %14s\n",
+           "phase", "count(sum)", "total(s)", "avg(s)", "min(s)", "max(s)", "maxrank(s)");
+    for (int i = 0; i < n; ++i)
+    {
+      if (gl_cnt[i] <= 0)
+        continue;
+      const double avg = gl_tot[i] / (double)gl_cnt[i];
+      printf("%-22s %12lld %14.6f %14.6e %14.6e %14.6e %14.6f\n",
+             abe_l4s_name[i], gl_cnt[i], gl_tot[i], avg,
+             gl_min[i], gl_max[i], gl_totmax[i]);
+    }
+    printf("===== end Level-4 profile =====\n\n");
+  }
+  // Level-5: merge/print the Interp_Points phase timers collected in MPatch.C
+  // (same collective reduce scope as the Level-4 block above).
+  abe_l5_interp_report(myrank, nprocs);
+}
+#else
+enum
+{
+  ABE_L4S_TOTAL = 0, ABE_L4S_VOLUME, ABE_L4S_PREP, ABE_L4S_INTERP,
+  ABE_L4S_SPHERE, ABE_L4S_AR1, ABE_L4S_AR2, ABE_L4S_AR3, ABE_L4S_AR4,
+  ABE_L4S_AR5, ABE_L4S_AR6, ABE_L4S_AR7, ABE_L4S_POST, ABE_L4S_CLEANUP
+};
+#define abe_l4s_rec(phase, start) ((void)0)
+#define abe_l5_interp_mark()      ((void)0)
+#endif
 //|============================================================================
 //| Constructor
 //|============================================================================
@@ -2251,6 +2385,9 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
                                      var *Sfx_rhs, var *Sfy_rhs, var *Sfz_rhs, // temparay memory for mass^i
                                      double *Rout, monitor *Monitor)
 {
+  // Level-4 profiling of surf_MassPAng (profiling only)
+  const double l4s_t_all = ABE_PROFILE_WTIME();
+  double l4s_tseg = l4s_t_all;
   if (myrank == 0 && GH->grids[lev] != 1)
     if (Monitor && Monitor->outfile)
       Monitor->outfile << "WARNING: surface integral on multipatches" << endl;
@@ -2282,6 +2419,8 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
     }
     Pp = Pp->next;
   }
+  abe_l4s_rec(ABE_L4S_VOLUME, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
 
   const int InList = 17;
 
@@ -2314,20 +2453,6 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
     pox[2][n] = rex * nz_g[n];
   }
 
-  double *shellf;
-  shellf = new double[n_tot * InList];
-
-  // we have assumed there is only one box on this level,
-  // so we do not need loop boxes
-  GH->PatL[lev]->data->Interp_Points(DG_List, n_tot, pox, shellf, Symmetry);
-
-  double Mass_out = 0;
-  double ang_outx, ang_outy, ang_outz;
-  double p_outx, p_outy, p_outz;
-  ang_outx = ang_outy = ang_outz = 0.0;
-  p_outx = p_outy = p_outz = 0.0;
-  const double f1o8 = 0.125;
-
   int mp, Lp, Nmin, Nmax;
 
   mp = n_tot / cpusize;
@@ -2344,6 +2469,30 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
     Nmax = Nmin + mp - 1;
   }
 
+  const int local_count = (Nmax >= Nmin) ? (Nmax - Nmin + 1) : 0;
+  double *shellf_local = new double[Mymax(1, local_count) * InList];
+  int *weight_local = new int[Mymax(1, local_count)];
+  abe_l4s_rec(ABE_L4S_PREP, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
+
+  // we have assumed there is only one box on this level,
+  // so we do not need loop boxes
+  // Level-5: arm profiling for the Interp_Points() call below (one mark per
+  // surf_MassPAng call; consumed inside the 5-argument Interp_Points overload).
+  abe_l5_interp_mark();
+  GH->PatL[lev]->data->Interp_Points_SparseOwner(
+      DG_List, n_tot, pox, shellf_local, weight_local,
+      Symmetry, MPI_COMM_WORLD, Nmin, local_count);
+  abe_l4s_rec(ABE_L4S_INTERP, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
+
+  double Mass_out = 0;
+  double ang_outx, ang_outy, ang_outz;
+  double p_outx, p_outy, p_outz;
+  ang_outx = ang_outy = ang_outz = 0.0;
+  p_outx = p_outy = p_outz = 0.0;
+  const double f1o8 = 0.125;
+
   double Chi, Psi;
   double Gxx, Gxy, Gxz, Gyy, Gyz, Gzz;
   double gupxx, gupxy, gupxz, gupyy, gupyz, gupzz;
@@ -2352,23 +2501,24 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
   int i;
   for (n = Nmin; n <= Nmax; n++)
   {
+    const int local_n = n - Nmin;
     //       need round off always
     i = int(n / N_phi); // int(1.723) = 1, int(-1.732) = -1
 
-    Chi = shellf[InList * n + 3]; // chi in fact
-    TRK = shellf[InList * n + 4];
-    Gxx = shellf[InList * n + 5] + 1.0;
-    Gxy = shellf[InList * n + 6];
-    Gxz = shellf[InList * n + 7];
-    Gyy = shellf[InList * n + 8] + 1.0;
-    Gyz = shellf[InList * n + 9];
-    Gzz = shellf[InList * n + 10] + 1.0;
-    axx = shellf[InList * n + 11];
-    axy = shellf[InList * n + 12];
-    axz = shellf[InList * n + 13];
-    ayy = shellf[InList * n + 14];
-    ayz = shellf[InList * n + 15];
-    azz = shellf[InList * n + 16];
+    Chi = shellf_local[InList * local_n + 3]; // chi in fact
+    TRK = shellf_local[InList * local_n + 4];
+    Gxx = shellf_local[InList * local_n + 5] + 1.0;
+    Gxy = shellf_local[InList * local_n + 6];
+    Gxz = shellf_local[InList * local_n + 7];
+    Gyy = shellf_local[InList * local_n + 8] + 1.0;
+    Gyz = shellf_local[InList * local_n + 9];
+    Gzz = shellf_local[InList * local_n + 10] + 1.0;
+    axx = shellf_local[InList * local_n + 11];
+    axy = shellf_local[InList * local_n + 12];
+    axz = shellf_local[InList * local_n + 13];
+    ayy = shellf_local[InList * local_n + 14];
+    ayz = shellf_local[InList * local_n + 15];
+    azz = shellf_local[InList * local_n + 16];
 
     Chi = 1.0 / (1.0 + Chi); // exp(4*phi)
     Psi = Chi * sqrt(Chi);   // Psi^6
@@ -2377,9 +2527,9 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
 // but this factor has been considered in f_admmass_bssn
 #ifdef GaussInt
     // wtcostheta is even function respect costheta
-    Mass_out = Mass_out + (shellf[InList * n] * nx_g[n] + shellf[InList * n + 1] * ny_g[n] + shellf[InList * n + 2] * nz_g[n]) * wtcostheta[i];
+    Mass_out = Mass_out + (shellf_local[InList * local_n] * nx_g[n] + shellf_local[InList * local_n + 1] * ny_g[n] + shellf_local[InList * local_n + 2] * nz_g[n]) * wtcostheta[i];
 #else
-    Mass_out = Mass_out + (shellf[InList * n] * nx_g[n] + shellf[InList * n + 1] * ny_g[n] + shellf[InList * n + 2] * nz_g[n]);
+    Mass_out = Mass_out + (shellf_local[InList * local_n] * nx_g[n] + shellf_local[InList * local_n + 1] * ny_g[n] + shellf_local[InList * local_n + 2] * nz_g[n]);
 #endif
 
     gupzz = Gxx * Gyy * Gzz + Gxy * Gyz * Gxz + Gxz * Gxy * Gyz -
@@ -2463,16 +2613,30 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
 #endif
     }
   }
+  abe_l4s_rec(ABE_L4S_SPHERE, l4s_tseg);
 
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&Mass_out, &mass, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
+  abe_l4s_rec(ABE_L4S_AR1, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&ang_outx, &sx, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  abe_l4s_rec(ABE_L4S_AR2, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&ang_outy, &sy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  abe_l4s_rec(ABE_L4S_AR3, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&ang_outz, &sz, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-
+  abe_l4s_rec(ABE_L4S_AR4, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&p_outx, &px, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  abe_l4s_rec(ABE_L4S_AR5, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&p_outy, &py, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  abe_l4s_rec(ABE_L4S_AR6, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
   MPI_Allreduce(&p_outz, &pz, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  abe_l4s_rec(ABE_L4S_AR7, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
 
 #ifdef GaussInt
   mass = mass * rex * rex * dphi * factor;
@@ -2503,12 +2667,17 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
   Rout[4] = sx;
   Rout[5] = sy;
   Rout[6] = sz;
+  abe_l4s_rec(ABE_L4S_POST, l4s_tseg);
+  l4s_tseg = ABE_PROFILE_WTIME();
 
   delete[] pox[0];
   delete[] pox[1];
   delete[] pox[2];
-  delete[] shellf;
+  delete[] shellf_local;
+  delete[] weight_local;
   DG_List->clearList();
+  abe_l4s_rec(ABE_L4S_CLEANUP, l4s_tseg);
+  abe_l4s_rec(ABE_L4S_TOTAL, l4s_t_all);
 }
 void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var *trK,
                                      var *gxx, var *gxy, var *gxz, var *gyy, var *gyz, var *gzz,
@@ -2582,20 +2751,6 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
     pox[2][n] = rex * nz_g[n];
   }
 
-  double *shellf;
-  shellf = new double[n_tot * InList];
-
-  // we have assumed there is only one box on this level,
-  // so we do not need loop boxes
-  GH->PatL[lev]->data->Interp_Points(DG_List, n_tot, pox, shellf, Symmetry, Comm_here);
-
-  double Mass_out = 0;
-  double ang_outx, ang_outy, ang_outz;
-  double p_outx, p_outy, p_outz;
-  ang_outx = ang_outy = ang_outz = 0.0;
-  p_outx = p_outy = p_outz = 0.0;
-  const double f1o8 = 0.125;
-
   int mp, Lp, Nmin, Nmax;
 
   int cpusize_here;
@@ -2615,6 +2770,23 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
     Nmax = Nmin + mp - 1;
   }
 
+  const int local_count = (Nmax >= Nmin) ? (Nmax - Nmin + 1) : 0;
+  double *shellf_local = new double[Mymax(1, local_count) * InList];
+  int *weight_local = new int[Mymax(1, local_count)];
+
+  // we have assumed there is only one box on this level,
+  // so we do not need loop boxes
+  GH->PatL[lev]->data->Interp_Points_SparseOwner(
+      DG_List, n_tot, pox, shellf_local, weight_local,
+      Symmetry, Comm_here, Nmin, local_count);
+
+  double Mass_out = 0;
+  double ang_outx, ang_outy, ang_outz;
+  double p_outx, p_outy, p_outz;
+  ang_outx = ang_outy = ang_outz = 0.0;
+  p_outx = p_outy = p_outz = 0.0;
+  const double f1o8 = 0.125;
+
   double Chi, Psi;
   double Gxx, Gxy, Gxz, Gyy, Gyz, Gzz;
   double gupxx, gupxy, gupxz, gupyy, gupyz, gupzz;
@@ -2623,23 +2795,24 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
   int i;
   for (n = Nmin; n <= Nmax; n++)
   {
+    const int local_n = n - Nmin;
     //       need round off always
     i = int(n / N_phi); // int(1.723) = 1, int(-1.732) = -1
 
-    Chi = shellf[InList * n + 3]; // chi in fact
-    TRK = shellf[InList * n + 4];
-    Gxx = shellf[InList * n + 5] + 1.0;
-    Gxy = shellf[InList * n + 6];
-    Gxz = shellf[InList * n + 7];
-    Gyy = shellf[InList * n + 8] + 1.0;
-    Gyz = shellf[InList * n + 9];
-    Gzz = shellf[InList * n + 10] + 1.0;
-    axx = shellf[InList * n + 11];
-    axy = shellf[InList * n + 12];
-    axz = shellf[InList * n + 13];
-    ayy = shellf[InList * n + 14];
-    ayz = shellf[InList * n + 15];
-    azz = shellf[InList * n + 16];
+    Chi = shellf_local[InList * local_n + 3]; // chi in fact
+    TRK = shellf_local[InList * local_n + 4];
+    Gxx = shellf_local[InList * local_n + 5] + 1.0;
+    Gxy = shellf_local[InList * local_n + 6];
+    Gxz = shellf_local[InList * local_n + 7];
+    Gyy = shellf_local[InList * local_n + 8] + 1.0;
+    Gyz = shellf_local[InList * local_n + 9];
+    Gzz = shellf_local[InList * local_n + 10] + 1.0;
+    axx = shellf_local[InList * local_n + 11];
+    axy = shellf_local[InList * local_n + 12];
+    axz = shellf_local[InList * local_n + 13];
+    ayy = shellf_local[InList * local_n + 14];
+    ayz = shellf_local[InList * local_n + 15];
+    azz = shellf_local[InList * local_n + 16];
 
     Chi = 1.0 / (1.0 + Chi); // exp(4*phi)
     Psi = Chi * sqrt(Chi);   // Psi^6
@@ -2648,9 +2821,9 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
 // but this factor has been considered in f_admmass_bssn
 #ifdef GaussInt
     // wtcostheta is even function respect costheta
-    Mass_out = Mass_out + (shellf[InList * n] * nx_g[n] + shellf[InList * n + 1] * ny_g[n] + shellf[InList * n + 2] * nz_g[n]) * wtcostheta[i];
+    Mass_out = Mass_out + (shellf_local[InList * local_n] * nx_g[n] + shellf_local[InList * local_n + 1] * ny_g[n] + shellf_local[InList * local_n + 2] * nz_g[n]) * wtcostheta[i];
 #else
-    Mass_out = Mass_out + (shellf[InList * n] * nx_g[n] + shellf[InList * n + 1] * ny_g[n] + shellf[InList * n + 2] * nz_g[n]);
+    Mass_out = Mass_out + (shellf_local[InList * local_n] * nx_g[n] + shellf_local[InList * local_n + 1] * ny_g[n] + shellf_local[InList * local_n + 2] * nz_g[n]);
 #endif
 
     gupzz = Gxx * Gyy * Gzz + Gxy * Gyz * Gxz + Gxz * Gxy * Gyz -
@@ -2778,7 +2951,8 @@ void surface_integral::surf_MassPAng(double rex, int lev, cgh *GH, var *chi, var
   delete[] pox[0];
   delete[] pox[1];
   delete[] pox[2];
-  delete[] shellf;
+  delete[] shellf_local;
+  delete[] weight_local;
   DG_List->clearList();
 }
 //|----------------------------------------------------------------

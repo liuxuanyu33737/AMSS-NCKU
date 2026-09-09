@@ -5611,9 +5611,16 @@ void Parallel::KillBlocks(MyList<Patch> *PatchLIST)
     PatchLIST = PatchLIST->next;
   }
 }
-bool Parallel::PatList_Interp_Points(MyList<Patch> *PatL, MyList<var> *VarList,
-                                     int NN, double **XX,
-                                     double *Shellf, int Symmetry)
+/* Batch consecutive points with the same owner Patch.  PatL (and, for the
+ * second overload, Comm_here) is fixed for the whole call, so a batch cannot
+ * cross an AMR level or communicator.  Keeping batches contiguous preserves
+ * the original point order and collective order. */
+static bool patlist_interp_points_batched(MyList<Patch> *PatL,
+                                          MyList<var> *VarList,
+                                          int NN, double **XX,
+                                          double *Shellf, int Symmetry,
+                                          MPI_Comm Comm_here,
+                                          bool use_comm_here)
 {
   MyList<var> *varl;
   int num_var = 0;
@@ -5625,14 +5632,15 @@ bool Parallel::PatList_Interp_Points(MyList<Patch> *PatL, MyList<var> *VarList,
   }
 
   double lld[dim], uud[dim];
-  double **pox;
-  pox = new double *[dim];
+  double **pox = new double *[dim];
   for (int j = 0; j < dim; j++)
-    pox[j] = new double[1];
-  for (int i = 0; i < NN; i++)
+    pox[j] = new double[Mymax(1, NN)];
+
+  int start = 0;
+  while (start < NN)
   {
-    MyList<Patch> *PL = PatL;
-    while (PL)
+    MyList<Patch> *owner = 0;
+    for (MyList<Patch> *PL = PatL; PL; PL = PL->next)
     {
       bool flag = true;
       for (int j = 0; j < dim; j++)
@@ -5640,25 +5648,73 @@ bool Parallel::PatList_Interp_Points(MyList<Patch> *PatL, MyList<var> *VarList,
         double h = PL->data->getdX(j);
         lld[j] = PL->data->lli[j] * h;
         uud[j] = PL->data->uui[j] * h;
-        if (XX[j][i] < PL->data->bbox[j] + lld[j] || XX[j][i] > PL->data->bbox[j + dim] - uud[j])
+        if (XX[j][start] < PL->data->bbox[j] + lld[j] ||
+            XX[j][start] > PL->data->bbox[j + dim] - uud[j])
         {
           flag = false;
           break;
         }
-        pox[j][0] = XX[j][i];
       }
       if (flag)
       {
-        PL->data->Interp_Points(VarList, 1, pox, Shellf + i * num_var, Symmetry);
+        owner = PL;
         break;
       }
-      PL = PL->next;
     }
-    if (!PL)
+    if (!owner)
     {
-      checkpatchlist(PatL, false);
+      Parallel::checkpatchlist(PatL, false);
+      for (int j = 0; j < dim; j++)
+        delete[] pox[j];
+      delete[] pox;
       return false;
     }
+
+    int end = start + 1;
+    while (end < NN)
+    {
+      MyList<Patch> *point_owner = 0;
+      for (MyList<Patch> *PL = PatL; PL; PL = PL->next)
+      {
+        bool flag = true;
+        for (int j = 0; j < dim; j++)
+        {
+          double h = PL->data->getdX(j);
+          lld[j] = PL->data->lli[j] * h;
+          uud[j] = PL->data->uui[j] * h;
+          if (XX[j][end] < PL->data->bbox[j] + lld[j] ||
+              XX[j][end] > PL->data->bbox[j + dim] - uud[j])
+          {
+            flag = false;
+            break;
+          }
+        }
+        if (flag)
+        {
+          point_owner = PL;
+          break;
+        }
+      }
+      if (point_owner != owner)
+        break;
+      ++end;
+    }
+
+    const int batch_NN = end - start;
+    for (int i = 0; i < batch_NN; i++)
+      for (int j = 0; j < dim; j++)
+        pox[j][i] = XX[j][start + i];
+
+    if (use_comm_here)
+      owner->data->Interp_Points(VarList, batch_NN, pox,
+                                 Shellf + start * num_var,
+                                 Symmetry, Comm_here);
+    else
+      owner->data->Interp_Points(VarList, batch_NN, pox,
+                                 Shellf + start * num_var,
+                                 Symmetry);
+
+    start = end;
   }
   for (int j = 0; j < dim; j++)
     delete[] pox[j];
@@ -5666,60 +5722,22 @@ bool Parallel::PatList_Interp_Points(MyList<Patch> *PatL, MyList<var> *VarList,
 
   return true;
 }
+
 bool Parallel::PatList_Interp_Points(MyList<Patch> *PatL, MyList<var> *VarList,
                                      int NN, double **XX,
-                                     double *Shellf, int Symmetry, MPI_Comm Comm_here)
+                                     double *Shellf, int Symmetry)
 {
-  MyList<var> *varl;
-  int num_var = 0;
-  varl = VarList;
-  while (varl)
-  {
-    num_var++;
-    varl = varl->next;
-  }
+  return patlist_interp_points_batched(PatL, VarList, NN, XX, Shellf,
+                                       Symmetry, MPI_COMM_WORLD, false);
+}
 
-  double lld[dim], uud[dim];
-  double **pox;
-  pox = new double *[dim];
-  for (int j = 0; j < dim; j++)
-    pox[j] = new double[1];
-  for (int i = 0; i < NN; i++)
-  {
-    MyList<Patch> *PL = PatL;
-    while (PL)
-    {
-      bool flag = true;
-      for (int j = 0; j < dim; j++)
-      {
-        double h = PL->data->getdX(j);
-        lld[j] = PL->data->lli[j] * h;
-        uud[j] = PL->data->uui[j] * h;
-        if (XX[j][i] < PL->data->bbox[j] + lld[j] || XX[j][i] > PL->data->bbox[j + dim] - uud[j])
-        {
-          flag = false;
-          break;
-        }
-        pox[j][0] = XX[j][i];
-      }
-      if (flag)
-      {
-        PL->data->Interp_Points(VarList, 1, pox, Shellf + i * num_var, Symmetry, Comm_here);
-        break;
-      }
-      PL = PL->next;
-    }
-    if (!PL)
-    {
-      checkpatchlist(PatL, false);
-      return false;
-    }
-  }
-  for (int j = 0; j < dim; j++)
-    delete[] pox[j];
-  delete[] pox;
-
-  return true;
+bool Parallel::PatList_Interp_Points(MyList<Patch> *PatL, MyList<var> *VarList,
+                                     int NN, double **XX,
+                                     double *Shellf, int Symmetry,
+                                     MPI_Comm Comm_here)
+{
+  return patlist_interp_points_batched(PatL, VarList, NN, XX, Shellf,
+                                       Symmetry, Comm_here, true);
 }
 void Parallel::aligncheck(double *bbox0, double *bboxl, int lev, double *DH0, int *shape)
 {

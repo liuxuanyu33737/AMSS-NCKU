@@ -1,6 +1,203 @@
 
 
 #include "macrodef.fh"
+#if ENABLE_ABE_PROFILING
+!=========================================================================
+! Level-6 profiling support for f_global_interp() (the Cell-center
+! global_interp below).  Pure diagnostics - no algorithmic or numerical
+! change.  The module accumulates internal phase timings of every
+! global_interp() call while abe_l6_gi_arm(1) is in force.  MPatch.C arms it
+! only around the Level-5-marked Patch::Interp_Points() calls (surf_MassPAng
+! cgh path), so all other f_global_interp() callers keep near-zero overhead.
+! The accumulators are fetched/reduced/printed from C++ (abe_l5_interp_report
+! in MPatch.C) through the bind(C) entry points below.
+!=========================================================================
+module abe_l6_gi_prof
+  use iso_c_binding
+  implicit none
+
+  integer, parameter :: GI_NPHASE = 4
+  integer, parameter :: GI_INDEX  = 1   ! index/bounds prep + box clamp + coord
+  integer, parameter :: GI_DECIDE = 2   ! decide3d(): stencil fetch (sym/SoA)
+  integer, parameter :: GI_POLIN  = 3   ! polin3(): 3-D polynomial interpolation
+  integer, parameter :: GI_TOTAL  = 4   ! whole global_interp call
+
+  logical(c_bool) :: l6_armed = .false.
+  logical         :: l6_init  = .false.
+  real(c_double)  :: l6_cnt(GI_NPHASE) = 0.0_c_double
+  real(c_double)  :: l6_tot(GI_NPHASE) = 0.0_c_double
+  real(c_double)  :: l6_mn(GI_NPHASE)  = huge(1.0_c_double)
+  real(c_double)  :: l6_mx(GI_NPHASE)  = 0.0_c_double
+
+contains
+
+  subroutine abe_l6_gi_arm(on) bind(C, name="abe_l6_gi_arm")
+    integer(c_int), value :: on
+    if (on /= 0) then
+      l6_armed = .true.
+    else
+      l6_armed = .false.
+    end if
+  end subroutine abe_l6_gi_arm
+
+  subroutine abe_l6_gi_reset() bind(C, name="abe_l6_gi_reset")
+    l6_cnt = 0.0_c_double
+    l6_tot = 0.0_c_double
+    l6_mn  = huge(1.0_c_double)
+    l6_mx  = 0.0_c_double
+    l6_init = .false.
+  end subroutine abe_l6_gi_reset
+
+  subroutine abe_l6_gi_get(ph, cnt, tot, mn, mx) bind(C, name="abe_l6_gi_get")
+    integer(c_int), value :: ph
+    real(c_double) :: cnt, tot, mn, mx
+    cnt = 0.0_c_double
+    tot = 0.0_c_double
+    mn  = huge(1.0_c_double)
+    mx  = 0.0_c_double
+    if (ph >= 1 .and. ph <= GI_NPHASE) then
+      cnt = l6_cnt(ph)
+      tot = l6_tot(ph)
+      mn  = l6_mn(ph)
+      mx  = l6_mx(ph)
+    end if
+  end subroutine abe_l6_gi_get
+
+  subroutine abe_l6_gi_rec(ph, dt)
+    integer, intent(in)        :: ph
+    real(c_double), intent(in) :: dt
+    if (.not. l6_init) then
+      call abe_l6_gi_reset()
+      l6_init = .true.
+    end if
+    if (ph >= 1 .and. ph <= GI_NPHASE) then
+      l6_cnt(ph) = l6_cnt(ph) + 1.0_c_double
+      l6_tot(ph) = l6_tot(ph) + dt
+      if (dt < l6_mn(ph)) l6_mn(ph) = dt
+      if (dt > l6_mx(ph)) l6_mx(ph) = dt
+    end if
+  end subroutine abe_l6_gi_rec
+
+  function abe_l6_wtime() result(t)
+    real(c_double) :: t
+    interface
+      function gi_mpi_wtime() bind(C, name="MPI_Wtime") result(wt)
+        import :: c_double
+        real(c_double) :: wt
+      end function gi_mpi_wtime
+    end interface
+    t = gi_mpi_wtime()
+  end function abe_l6_wtime
+
+end module abe_l6_gi_prof
+!=========================================================================
+! Level-7 profiling support for polin3() (the 3-D polynomial-interpolation
+! kernel shared by global_interp()/interp_2()/global_interp_ss()).  Pure
+! diagnostics - no algorithmic or numerical change.
+!
+! polin3() follows zyx order: it first interpolates along x3a (the third
+! axis of ya, i.e. z for the Cell-center global_interp() callers) at m*n
+! grid lines, then along x2a (second axis / y) at m lines, and finally a
+! single polint along x1a (first axis / x).  This module accumulates the
+! per-call wall time of each block (plus the trivial entry/setup segment)
+! while abe_l7_p3_arm(1) is in force.  MPatch.C arms/disarms it together
+! with the Level-6 f_global_interp() profile (abe_l6_gi_arm), i.e. only
+! around the surf_MassPAng-marked Interp_Points() calls, so unmarked
+! polin3() callers keep near-zero overhead.
+!
+! polin3() and polint() are not modified algorithmically.  The polint()
+! invocation count per polin3() call is n*m + m + 1 (here m = n = ordn),
+! accumulated in l7_polint so the report can separate call overhead from
+! the polint() body cost.
+!=========================================================================
+module abe_l7_p3_prof
+  use iso_c_binding
+  implicit none
+
+  integer, parameter :: P3_NPHASE = 5
+  integer, parameter :: P3_PREP  = 1   ! entry/setup before the first polint
+  integer, parameter :: P3_ZDIR  = 2   ! x3a-direction block (m*n polints)
+  integer, parameter :: P3_YDIR  = 3   ! x2a-direction block (m polints)
+  integer, parameter :: P3_XDIR  = 4   ! x1a-direction final polint (1)
+  integer, parameter :: P3_TOTAL = 5   ! whole polin3() call
+
+  logical(c_bool) :: l7_armed = .false.
+  logical         :: l7_init  = .false.
+  real(c_double)  :: l7_cnt(P3_NPHASE) = 0.0_c_double
+  real(c_double)  :: l7_tot(P3_NPHASE) = 0.0_c_double
+  real(c_double)  :: l7_mn(P3_NPHASE)  = huge(1.0_c_double)
+  real(c_double)  :: l7_mx(P3_NPHASE)  = 0.0_c_double
+  real(c_double)  :: l7_polint         = 0.0_c_double   ! polint() calls
+
+contains
+
+  subroutine abe_l7_p3_arm(on) bind(C, name="abe_l7_p3_arm")
+    integer(c_int), value :: on
+    if (on /= 0) then
+      l7_armed = .true.
+    else
+      l7_armed = .false.
+    end if
+  end subroutine abe_l7_p3_arm
+
+  subroutine abe_l7_p3_reset() bind(C, name="abe_l7_p3_reset")
+    l7_cnt = 0.0_c_double
+    l7_tot = 0.0_c_double
+    l7_mn  = huge(1.0_c_double)
+    l7_mx  = 0.0_c_double
+    l7_polint = 0.0_c_double
+    l7_init = .false.
+  end subroutine abe_l7_p3_reset
+
+  subroutine abe_l7_p3_get(ph, cnt, tot, mn, mx) bind(C, name="abe_l7_p3_get")
+    integer(c_int), value :: ph
+    real(c_double) :: cnt, tot, mn, mx
+    cnt = 0.0_c_double
+    tot = 0.0_c_double
+    mn  = huge(1.0_c_double)
+    mx  = 0.0_c_double
+    if (ph >= 1 .and. ph <= P3_NPHASE) then
+      cnt = l7_cnt(ph)
+      tot = l7_tot(ph)
+      mn  = l7_mn(ph)
+      mx  = l7_mx(ph)
+    end if
+  end subroutine abe_l7_p3_get
+
+  subroutine abe_l7_p3_get_polint(cnt) bind(C, name="abe_l7_p3_get_polint")
+    real(c_double) :: cnt
+    cnt = l7_polint
+  end subroutine abe_l7_p3_get_polint
+
+  subroutine p3_rec(ph, dt)
+    integer, intent(in)        :: ph
+    real(c_double), intent(in) :: dt
+    if (.not. l7_init) then
+      call abe_l7_p3_reset()
+      l7_init = .true.
+    end if
+    if (ph >= 1 .and. ph <= P3_NPHASE) then
+      l7_cnt(ph) = l7_cnt(ph) + 1.0_c_double
+      l7_tot(ph) = l7_tot(ph) + dt
+      if (dt < l7_mn(ph)) l7_mn(ph) = dt
+      if (dt > l7_mx(ph)) l7_mx(ph) = dt
+    end if
+  end subroutine p3_rec
+
+  function p3_wtime() result(t)
+    real(c_double) :: t
+    interface
+      function p3_mpi_wtime() bind(C, name="MPI_Wtime") result(wt)
+        import :: c_double
+        real(c_double) :: wt
+      end function p3_mpi_wtime
+    end interface
+    t = p3_mpi_wtime()
+  end function p3_wtime
+
+end module abe_l7_p3_prof
+#endif
+
 
 #ifdef Vertex
 #ifdef Cell
@@ -230,6 +427,7 @@
   return
 
   end subroutine global_interp
+
 !----------------------------------------------------------------
 ! decide which 3d data to be used does not surport PI-Symmetry yet 
 !----------------------------------------------------------------
@@ -710,6 +908,9 @@ end subroutine d2dump
 !--------------------------------------------------------------------------
 ! three dimensional interpolation for cell center grid structure  
   subroutine global_interp(ex,X,Y,Z,f,f_int,x1,y1,z1,ORDN,SoA,symmetry)
+#if ENABLE_ABE_PROFILING
+  use abe_l6_gi_prof
+#endif
   implicit none
 
 !~~~~~~> Input parameters:
@@ -732,7 +933,11 @@ end subroutine d2dump
   real*8 :: dX,dY,dZ,ddy
   real*8, parameter :: ONE=1.d0
   logical::decide3d
+#if ENABLE_ABE_PROFILING
+  real*8 :: l6_t0, l6_t1, l6_t2, l6_t3
 
+  if(l6_armed) l6_t0 = abe_l6_wtime()
+#endif
   imin = lbound(f,1)
   jmin = lbound(f,2)
   kmin = lbound(f,3)
@@ -781,17 +986,208 @@ end subroutine d2dump
  else
   cx(3) = (z1 + Z(1-cxB(3)))/dZ
  endif
+#if ENABLE_ABE_PROFILING
+  if(l6_armed) l6_t1 = abe_l6_wtime()
+#endif
 
   if(decide3d(ex,f,f,cxB,cxT,SoA,ya,ORDN,Symmetry))then
      write(*,*)"global_interp position: ",x1,y1,z1
      write(*,*)"data range: ",X(1),X(ex(1)),Y(1),Y(ex(2)),Z(1),Z(ex(3))
      stop
   endif
+#if ENABLE_ABE_PROFILING
+  if(l6_armed) l6_t2 = abe_l6_wtime()
+#endif
   call polin3(x1a,x1a,x1a,ya,cx(1),cx(2),cx(3),f_int,ddy,ORDN)
+#if ENABLE_ABE_PROFILING
+  if(l6_armed)then
+    l6_t3 = abe_l6_wtime()
+    call abe_l6_gi_rec(GI_INDEX, l6_t1 - l6_t0)
+    call abe_l6_gi_rec(GI_DECIDE, l6_t2 - l6_t1)
+    call abe_l6_gi_rec(GI_POLIN,  l6_t3 - l6_t2)
+    call abe_l6_gi_rec(GI_TOTAL,  l6_t3 - l6_t0)
+  endif
+#endif
 
   return
 
   end subroutine global_interp
+
+!-----------------------------------------------------------------------------
+! Cell-only fixed-order interpolation of 17 surf_MassPAng fields at one point.
+! Geometry, source indices, and weights are shared; SoA signs are per field.
+!-----------------------------------------------------------------------------
+  subroutine global_interp_batch17(ex,X,Y,Z, &
+       f1,f2,f3,f4,f5,f6,f7,f8,f9,f10,f11,f12,f13,f14,f15,f16,f17, &
+       yout,x1,y1,z1,ORDN,soa,Symmetry,status)
+  implicit none
+
+  integer, intent(in) :: ex(3),ORDN,Symmetry
+  real*8, intent(in) :: X(ex(1)),Y(ex(2)),Z(ex(3))
+  real*8, intent(in) :: f1(ex(1),ex(2),ex(3)),f2(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f3(ex(1),ex(2),ex(3)),f4(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f5(ex(1),ex(2),ex(3)),f6(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f7(ex(1),ex(2),ex(3)),f8(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f9(ex(1),ex(2),ex(3)),f10(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f11(ex(1),ex(2),ex(3)),f12(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f13(ex(1),ex(2),ex(3)),f14(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f15(ex(1),ex(2),ex(3)),f16(ex(1),ex(2),ex(3))
+  real*8, intent(in) :: f17(ex(1),ex(2),ex(3))
+  real*8, intent(out) :: yout(17)
+  real*8, intent(in) :: x1,y1,z1,soa(3,17)
+  integer, intent(out) :: status
+
+  integer :: i,j,k,m,q
+  integer :: cxB(3),cxT(3),cxI(3),cmin(3),cmax(3)
+  integer :: src_i(6,6,6),src_j(6,6,6),src_k(6,6,6)
+  integer :: reflect_mask(6,6,6),qi,qj,qk,mask
+  integer, parameter :: NO_SYMM=0,EQUATORIAL=1,OCTANT=2
+  real*8 :: dX,dY,dZ,cx(3),wx(6),wy(6),wz(6)
+  real*8 :: ya(6,6,6),ztmp(6,6),ytmp(6)
+
+  status=1
+  yout=0.d0
+  if(ORDN.ne.6) return
+  if(minval(ex).lt.2) return
+
+  dX=X(2)-X(1)
+  dY=Y(2)-Y(1)
+  dZ=Z(2)-Z(1)
+  cxI(1)=idint((x1-X(1))/dX+0.4d0)+1
+  cxI(2)=idint((y1-Y(1))/dY+0.4d0)+1
+  cxI(3)=idint((z1-Z(1))/dZ+0.4d0)+1
+  cxB=cxI-ORDN/2+1
+  cxT=cxB+ORDN-1
+
+  cmin=1
+  cmax=ex
+  if(Symmetry.eq.OCTANT .and. dabs(X(1)).lt.dX) cmin(1)=-ORDN/2+1
+  if(Symmetry.eq.OCTANT .and. dabs(Y(1)).lt.dY) cmin(2)=-ORDN/2+1
+  if(Symmetry.ne.NO_SYMM .and. dabs(Z(1)).lt.dZ) cmin(3)=-ORDN/2+1
+  do m=1,3
+    if(cxB(m).lt.cmin(m))then
+      cxB(m)=cmin(m)
+      cxT(m)=cxB(m)+ORDN-1
+    endif
+    if(cxT(m).gt.cmax(m))then
+      cxT(m)=cmax(m)
+      cxB(m)=cxT(m)+1-ORDN
+    endif
+  enddo
+
+  if(cxB(1).gt.0)then
+    cx(1)=(x1-X(cxB(1)))/dX
+  else
+    cx(1)=(x1+X(1-cxB(1)))/dX
+  endif
+  if(cxB(2).gt.0)then
+    cx(2)=(y1-Y(cxB(2)))/dY
+  else
+    cx(2)=(y1+Y(1-cxB(2)))/dY
+  endif
+  if(cxB(3).gt.0)then
+    cx(3)=(z1-Z(cxB(3)))/dZ
+  else
+    cx(3)=(z1+Z(1-cxB(3)))/dZ
+  endif
+
+  do k=1,6
+    qk=cxB(3)+k-1
+    do j=1,6
+      qj=cxB(2)+j-1
+      do i=1,6
+        qi=cxB(1)+i-1
+        src_i(i,j,k)=merge(qi,1-qi,qi.gt.0)
+        src_j(i,j,k)=merge(qj,1-qj,qj.gt.0)
+        src_k(i,j,k)=merge(qk,1-qk,qk.gt.0)
+        mask=0
+        if(qi.le.0) mask=ibset(mask,0)
+        if(qj.le.0) mask=ibset(mask,1)
+        if(qk.le.0) mask=ibset(mask,2)
+        reflect_mask(i,j,k)=mask
+        if(src_i(i,j,k).lt.1 .or. src_i(i,j,k).gt.ex(1) .or. &
+           src_j(i,j,k).lt.1 .or. src_j(i,j,k).gt.ex(2) .or. &
+           src_k(i,j,k).lt.1 .or. src_k(i,j,k).gt.ex(3)) return
+      enddo
+    enddo
+  enddo
+
+  do i=1,6
+    wx(i)=1.d0
+    wy(i)=1.d0
+    wz(i)=1.d0
+    do q=1,6
+      if(q.ne.i)then
+        wx(i)=wx(i)*(cx(1)-dble(q-1))/dble(i-q)
+        wy(i)=wy(i)*(cx(2)-dble(q-1))/dble(i-q)
+        wz(i)=wz(i)*(cx(3)-dble(q-1))/dble(i-q)
+      endif
+    enddo
+  enddo
+
+  call eval_field(f1, soa(:,1), yout(1))
+  call eval_field(f2, soa(:,2), yout(2))
+  call eval_field(f3, soa(:,3), yout(3))
+  call eval_field(f4, soa(:,4), yout(4))
+  call eval_field(f5, soa(:,5), yout(5))
+  call eval_field(f6, soa(:,6), yout(6))
+  call eval_field(f7, soa(:,7), yout(7))
+  call eval_field(f8, soa(:,8), yout(8))
+  call eval_field(f9, soa(:,9), yout(9))
+  call eval_field(f10,soa(:,10),yout(10))
+  call eval_field(f11,soa(:,11),yout(11))
+  call eval_field(f12,soa(:,12),yout(12))
+  call eval_field(f13,soa(:,13),yout(13))
+  call eval_field(f14,soa(:,14),yout(14))
+  call eval_field(f15,soa(:,15),yout(15))
+  call eval_field(f16,soa(:,16),yout(16))
+  call eval_field(f17,soa(:,17),yout(17))
+  status=0
+  return
+
+  contains
+
+  subroutine eval_field(f,soav,value)
+  implicit none
+  real*8, intent(in) :: f(ex(1),ex(2),ex(3)),soav(3)
+  real*8, intent(out) :: value
+  real*8 :: signv
+  integer :: ii,jj,kk,local_mask
+
+  do kk=1,6
+    do jj=1,6
+      do ii=1,6
+        signv=1.d0
+        local_mask=reflect_mask(ii,jj,kk)
+        if(btest(local_mask,0)) signv=signv*soav(1)
+        if(btest(local_mask,1)) signv=signv*soav(2)
+        if(btest(local_mask,2)) signv=signv*soav(3)
+        ya(ii,jj,kk)=f(src_i(ii,jj,kk),src_j(ii,jj,kk), &
+                          src_k(ii,jj,kk))*signv
+      enddo
+    enddo
+  enddo
+  do jj=1,6
+    do ii=1,6
+      ztmp(ii,jj)=0.d0
+      do kk=1,6
+        ztmp(ii,jj)=ztmp(ii,jj)+wz(kk)*ya(ii,jj,kk)
+      enddo
+    enddo
+  enddo
+  do ii=1,6
+    ytmp(ii)=0.d0
+    do jj=1,6
+      ytmp(ii)=ytmp(ii)+wy(jj)*ztmp(ii,jj)
+    enddo
+  enddo
+  value=0.d0
+  do ii=1,6
+    value=value+wx(ii)*ytmp(ii)
+  enddo
+  end subroutine eval_field
+
+  end subroutine global_interp_batch17
 !----------------------------------------------------------------
 ! decide which 3d data to be used does not surport PI-Symmetry yet 
 !----------------------------------------------------------------
@@ -1476,6 +1872,9 @@ end subroutine d2dump
 !
 !------------------------------------------------------------------------------
   subroutine polin3(x1a,x2a,x3a,ya,x1,x2,x3,y,dy,ordn)
+#if ENABLE_ABE_PROFILING
+  use abe_l7_p3_prof
+#endif
 
   implicit none
 
@@ -1494,23 +1893,66 @@ end subroutine d2dump
   real*8, dimension(ordn) :: yntmp
   real*8, dimension(ordn) :: yqtmp
 
+#if ENABLE_ABE_PROFILING
+! Level-7 profiling locals (pure diagnostics, no numerical effect; module
+! abe_l7_p3_prof above).  Timing is gated by the l7_armed flag that MPatch.C
+! raises only around the surf_MassPAng-marked Interp_Points() calls (same
+! window that arms the Level-6 f_global_interp() profile), so unarmed
+! polin3() callers pay one logical test per call.
+  real*8  :: p3_t0,p3_tb,p3_te,p3_tz,p3_ty,p3_tx
+  logical :: p3_on
+
+  p3_on = l7_armed
+  if(p3_on) p3_t0 = p3_wtime()
+#endif
+
   m=size(x1a)
   n=size(x2a)
-  
+#if ENABLE_ABE_PROFILING
+  if(p3_on)then
+    call p3_rec(P3_PREP,p3_wtime()-p3_t0)
+    p3_tz = 0.d0
+    p3_ty = 0.d0
+  endif
+#endif
+
   do i=1,m
+#if ENABLE_ABE_PROFILING
+   if(p3_on) p3_tb = p3_wtime()
+#endif
    do j=1,n
 
     yqtmp=ya(i,j,:)
     call polint(x3a,yqtmp,x3,yatmp(i,j),dy,ordn)
 
    end do
+#if ENABLE_ABE_PROFILING
+   if(p3_on) p3_tz = p3_tz + (p3_wtime()-p3_tb)
+   if(p3_on) p3_tb = p3_wtime()
+#endif
 
     yntmp=yatmp(i,:)
     call polint(x2a,yntmp,x2,ymtmp(i),dy,ordn)
 
+#if ENABLE_ABE_PROFILING
+   if(p3_on) p3_ty = p3_ty + (p3_wtime()-p3_tb)
+#endif
   end do
 
+#if ENABLE_ABE_PROFILING
+  if(p3_on) p3_te = p3_wtime()
+#endif
   call polint(x1a,ymtmp,x1,y,dy,ordn)
+#if ENABLE_ABE_PROFILING
+  if(p3_on)then
+    p3_tx = p3_wtime()-p3_te
+    call p3_rec(P3_TOTAL,p3_wtime()-p3_t0)
+    call p3_rec(P3_ZDIR,p3_tz)
+    call p3_rec(P3_YDIR,p3_ty)
+    call p3_rec(P3_XDIR,p3_tx)
+    l7_polint = l7_polint + n*m + m + 1
+  endif
+#endif
 
   return
 

@@ -8,6 +8,7 @@
 #include "var.h"
 #include "macrodef.h" //need dim here; Vertex or Cell; ghost_width
 
+
 class Patch
 {
 
@@ -42,6 +43,18 @@ public:
    void Interp_Points(MyList<var> *VarList,
                       int NN, double **XX,
                       double *Shellf, int Symmetry, MPI_Comm Comm_here);
+   void Interp_Points_ReduceScatter(MyList<var> *VarList,
+                                    int NN, double **XX,
+                                    double *Shellf_local,
+                                    int *Weight_local,
+                                    int Symmetry, MPI_Comm Comm_here,
+                                    int local_start, int local_count);
+   void Interp_Points_SparseOwner(MyList<var> *VarList,
+                                  int NN, double **XX,
+                                  double *Shellf_local,
+                                  int *Weight_local,
+                                  int Symmetry, MPI_Comm Comm_here,
+                                  int local_start, int local_count);
    bool Interp_ONE_Point(MyList<var> *VarList, double *XX,
                          double *Shellf, int Symmetry, MPI_Comm Comm_here);
    void Find_Maximum(MyList<var> *VarList, double *XX,

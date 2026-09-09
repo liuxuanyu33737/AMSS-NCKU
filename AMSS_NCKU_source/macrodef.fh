@@ -5,6 +5,12 @@
 
 #define ghost_width 3
 
+/* Unified compile-time switch for optional Level-1 through Level-7 profiling.
+   Override with -DENABLE_ABE_PROFILING=1. */
+#ifndef ENABLE_ABE_PROFILING
+#define ENABLE_ABE_PROFILING 0
+#endif
+
 
 
 #define GAUGE 0
@@ -74,4 +80,3 @@ Type of Potential and Scalar Distribution in F(R) Scalar-Tensor Theory
     5: shell with   phi(r) = phi0 * Exp(-(r-r0)**2/sigma), V = 0
 
 #endif
-
