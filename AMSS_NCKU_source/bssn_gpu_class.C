@@ -2,6 +2,7 @@
 #ifdef newc
 #include <sstream>
 #include <cstdio>
+#include <iomanip>
 using namespace std;
 #else
 #include <stdio.h>
@@ -2127,6 +2128,21 @@ void bssn_class::Evolve(int Steps)
              (double)peak_min / (1024.0 * 1024.0),
              (double)peak_avg / (1024.0 * 1024.0),
              (double)peak_max / (1024.0 * 1024.0));
+
+    // Match the CPU evolution diagnostic, using the already-updated Porg0.
+    if (myrank == 0)
+    {
+      for (int i_count = 0; i_count < BH_num; i_count++)
+      {
+        cout << " puncture position: no."
+             << setw(2) << setfill(' ') << i_count
+             << " = (" << Porg0[i_count][0] << " "
+             << Porg0[i_count][1] << " "
+             << Porg0[i_count][2] << ")"
+             << endl;
+      }
+      cout << endl;
+    }
 
     if (LastCheck >= CheckTime)
     {

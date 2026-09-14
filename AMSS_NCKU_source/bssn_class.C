@@ -30,6 +30,7 @@ using namespace std;
 #include "getnp4.h"
 #include "shellfunctions.h"
 #include "parameters.h"
+#include "v7_wave_profile.h"
 
 #ifdef With_AHF
 #include "derivatives.h"
@@ -37,6 +38,7 @@ using namespace std;
 #endif
 
 #include "perf.h"
+#include "abe_wtime_prof.h"
 
 #include "derivatives.h"
 #include "ricci_gamma.h"
@@ -2302,6 +2304,8 @@ void bssn_class::Evolve(int Steps)
       }
   #endif
   */
+  abe_prof_report(myrank, nprocs);
+  v7_wave_report(myrank, nprocs);
 }
 
 //================================================================================================
@@ -2320,6 +2324,7 @@ void bssn_class::Evolve(int Steps)
 void bssn_class::RecursiveStep(int lev)
 {
   double dT_lev = dT * pow(0.5, Mymax(lev, trfls));
+  double t_abe; // coarse-grained MPI_Wtime instrumentation
 
   int NoIterations = 1, YN;
   if (lev <= trfls)
@@ -2364,7 +2369,9 @@ void bssn_class::RecursiveStep(int lev)
     //
     // till here the PhysTime has updated dT_lev
     //  if(myrank==0) cout<<"level now = "<<lev<<", "<<fgt(PhysTime-dT_lev,StartTime,dT_lev/2)<<endl;
+    t_abe = abe_prof_begin();
     RestrictProlong(lev, YN, fgt(PhysTime - dT_lev, StartTime, dT_lev / 2), StateList, OldStateList, SynchList_cor);
+    abe_prof_end(ABE_PROF_AMR, t_abe);
     // RestrictProlong(lev,YN,false,StateList,OldStateList,SynchList_cor);
 
 #ifdef WithShell
@@ -2393,9 +2400,11 @@ void bssn_class::RecursiveStep(int lev)
 #endif
 
 #if (REGLEV == 0)
+  t_abe = abe_prof_begin();
   GH->Regrid_Onelevel(lev, Symmetry, BH_num, Porgbr, Porg0,
                       SynchList_cor, OldStateList, StateList, SynchList_pre,
                       fgt(PhysTime - dT_lev, StartTime, dT_lev / 2), ErrorMonitor);
+  abe_prof_end(ABE_PROF_AMR, t_abe);
 #endif
 }
 
@@ -2980,13 +2989,19 @@ void bssn_class::Step(int lev, int YN)
   setpbh(BH_num, Porg0, Mass, BH_num_input);
 
   double dT_lev = dT * pow(0.5, Mymax(lev, trfls));
+  double t_abe; // coarse-grained MPI_Wtime instrumentation
 
 // new code 2013-2-15, zjcao
+  t_abe = abe_prof_begin();
 #if (MAPBH == 1)
   // for black hole position
   if (BH_num > 0 && lev == GH->levels - 1)
   {
+    double t_fine = abe_fine_begin();
     compute_Porg_rhs(Porg0, Porg_rhs, Sfx0, Sfy0, Sfz0, lev);
+    abe_fine_end(ABE_FINE_BH_PORG_RHS, lev, t_fine);
+
+    t_fine = abe_fine_begin();
     for (int ithBH = 0; ithBH < BH_num; ithBH++)
     {
       for (int ith = 0; ith < 3; ith++)
@@ -3012,15 +3027,19 @@ void bssn_class::Step(int lev, int YN)
         DG_List->clearList();
       }
     }
+    abe_fine_end(ABE_FINE_BH_EULER_PRED, lev, t_fine);
   }
 
   // data analysis part
   // Warning NOTE: the variables1 are used as temp storege room
   if (lev == a_lev)
   {
+    const double t_anal = abe_fine_begin();
     AnalysisStuff(lev, dT_lev);
+    abe_fine_end(ABE_FINE_ANALYSIS, lev, t_anal);
   }
 #endif
+  abe_prof_end(ABE_PROF_OTHER, t_abe);
 
 #ifdef With_AHF
   AH_Step_Find(lev, dT_lev);
@@ -3046,13 +3065,16 @@ void bssn_class::Step(int lev, int YN)
       if (myrank == cg->rank)
       {
 #if (AGM == 0)
+        t_abe = abe_prof_begin();
         f_enforce_ga(cg->shape,
                      cg->fgfs[gxx0->sgfn], cg->fgfs[gxy0->sgfn], cg->fgfs[gxz0->sgfn], 
                      cg->fgfs[gyy0->sgfn], cg->fgfs[gyz0->sgfn], cg->fgfs[gzz0->sgfn],
                      cg->fgfs[Axx0->sgfn], cg->fgfs[Axy0->sgfn], cg->fgfs[Axz0->sgfn], 
                      cg->fgfs[Ayy0->sgfn], cg->fgfs[Ayz0->sgfn], cg->fgfs[Azz0->sgfn]);
+        abe_prof_end(ABE_PROF_ENFORCE_GA, t_abe);
 #endif
 
+        t_abe = abe_prof_begin();
         if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
                                cg->fgfs[phi0->sgfn], cg->fgfs[trK0->sgfn],
                                cg->fgfs[gxx0->sgfn], cg->fgfs[gxy0->sgfn], cg->fgfs[gxz0->sgfn], 
@@ -3094,6 +3116,7 @@ void bssn_class::Step(int lev, int YN)
                << cg->bbox[2] << ":" << cg->bbox[5] << ")" << endl;
           ERROR = 1;
         }
+        abe_prof_end(ABE_PROF_COMPUTE_RHS, t_abe);
 
         // rk4 substep and boundary
         {
@@ -3103,33 +3126,43 @@ void bssn_class::Step(int lev, int YN)
 #if (SommerType == 0)
 #ifndef WithShell
             if (lev == 0) // sommerfeld indeed
+            {
+              t_abe = abe_prof_begin();
               f_sommerfeld_routbam(cg->shape, cg->X[0], cg->X[1], cg->X[2],
-                                   Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2], 
+                                   Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2],
                                    Pp->data->bbox[3], Pp->data->bbox[4], Pp->data->bbox[5],
                                    cg->fgfs[varlrhs->data->sgfn],
-                                   cg->fgfs[varl0->data->sgfn], 
+                                   cg->fgfs[varl0->data->sgfn],
                                    varl0->data->propspeed, varl0->data->SoA,
                                    Symmetry);
+              abe_prof_end(ABE_PROF_BOUNDARY, t_abe);
+            }
 
 #endif
 #endif
+              t_abe = abe_prof_begin();
             f_rungekutta4_rout(cg->shape, dT_lev, 
                                cg->fgfs[varl0->data->sgfn], 
                                cg->fgfs[varl->data->sgfn], 
                                cg->fgfs[varlrhs->data->sgfn],
                                iter_count);
+              abe_prof_end(ABE_PROF_RK4, t_abe);
 #ifndef WithShell
             if (lev > 0) // fix BD point
 #endif
+            {
+              t_abe = abe_prof_begin();
               f_sommerfeld_rout(cg->shape, cg->X[0], cg->X[1], cg->X[2],
-                                Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2], 
+                                Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2],
                                 Pp->data->bbox[3], Pp->data->bbox[4], Pp->data->bbox[5],
-                                dT_lev, 
+                                dT_lev,
                                 cg->fgfs[phi0->sgfn],
-                                cg->fgfs[Lap0->sgfn], 
-                                cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], 
+                                cg->fgfs[Lap0->sgfn],
+                                cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn],
                                 varl0->data->SoA,
                                 Symmetry, cor);
+              abe_prof_end(ABE_PROF_BOUNDARY, t_abe);
+            }
 
 #if (SommerType == 1)
 #warning "shell part still bam type"
@@ -3150,7 +3183,9 @@ void bssn_class::Step(int lev, int YN)
             varlrhs = varlrhs->next;
           }
         }
+        t_abe = abe_prof_begin();
         f_lowerboundset(cg->shape, cg->fgfs[phi->sgfn], chitiny);
+        abe_prof_end(ABE_PROF_BOUNDARY, t_abe);
       }
       if (BP == Pp->data->ble)
         break;
@@ -3161,7 +3196,9 @@ void bssn_class::Step(int lev, int YN)
   // check error information
   {
     int erh = ERROR;
+    const double t_allred = abe_fine_begin();
     MPI_Allreduce(&erh, &ERROR, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    abe_fine_end(ABE_FINE_ERR_ALLREDUCE, lev, t_allred);
   }
   if (ERROR)
   {
@@ -3334,7 +3371,9 @@ void bssn_class::Step(int lev, int YN)
   }
 #endif
 
+  t_abe = abe_prof_begin();
   Parallel::Sync(GH->PatL[lev], SynchList_pre, Symmetry);
+  abe_prof_end(ABE_PROF_SYNC, t_abe);
 
 #ifdef WithShell
   if (lev == 0)
@@ -3410,11 +3449,13 @@ void bssn_class::Step(int lev, int YN)
         if (myrank == cg->rank)
         {
 #if (AGM == 0)
+          t_abe = abe_prof_begin();
           f_enforce_ga(cg->shape,
                        cg->fgfs[gxx->sgfn], cg->fgfs[gxy->sgfn], cg->fgfs[gxz->sgfn], 
                        cg->fgfs[gyy->sgfn], cg->fgfs[gyz->sgfn], cg->fgfs[gzz->sgfn],
                        cg->fgfs[Axx->sgfn], cg->fgfs[Axy->sgfn], cg->fgfs[Axz->sgfn], 
                        cg->fgfs[Ayy->sgfn], cg->fgfs[Ayz->sgfn], cg->fgfs[Azz->sgfn]);
+          abe_prof_end(ABE_PROF_ENFORCE_GA, t_abe);
 #elif (AGM == 1)
           if (iter_count == 3)
             f_enforce_ga(cg->shape,
@@ -3424,6 +3465,7 @@ void bssn_class::Step(int lev, int YN)
                          cg->fgfs[Ayy->sgfn], cg->fgfs[Ayz->sgfn], cg->fgfs[Azz->sgfn]);
 #endif
 
+          t_abe = abe_prof_begin();
           if (f_compute_rhs_bssn(cg->shape, TRK4, cg->X[0], cg->X[1], cg->X[2],
                                  cg->fgfs[phi->sgfn], cg->fgfs[trK->sgfn],
                                  cg->fgfs[gxx->sgfn], cg->fgfs[gxy->sgfn], cg->fgfs[gxz->sgfn], 
@@ -3465,6 +3507,7 @@ void bssn_class::Step(int lev, int YN)
                  << cg->bbox[2] << ":" << cg->bbox[5] << ")" << endl;
             ERROR = 1;
           }
+          abe_prof_end(ABE_PROF_COMPUTE_RHS, t_abe);
           // rk4 substep and boundary
           {
             MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varl1 = SynchList_cor, *varlrhs = RHSList; // we do not check the correspondence here
@@ -3473,32 +3516,42 @@ void bssn_class::Step(int lev, int YN)
 #if (SommerType == 0)
 #ifndef WithShell
               if (lev == 0) // sommerfeld indeed
+              {
+              t_abe = abe_prof_begin();
                 f_sommerfeld_routbam(cg->shape, cg->X[0], cg->X[1], cg->X[2],
-                                     Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2], 
+                                     Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2],
                                      Pp->data->bbox[3], Pp->data->bbox[4], Pp->data->bbox[5],
                                      cg->fgfs[varl1->data->sgfn],
                                      cg->fgfs[varl->data->sgfn], varl0->data->propspeed, varl0->data->SoA,
                                      Symmetry);
+              abe_prof_end(ABE_PROF_BOUNDARY, t_abe);
+              }
 #endif
 #endif
+              t_abe = abe_prof_begin();
               f_rungekutta4_rout(cg->shape, dT_lev, 
                                  cg->fgfs[varl0->data->sgfn], 
                                  cg->fgfs[varl1->data->sgfn], 
                                  cg->fgfs[varlrhs->data->sgfn],
                                  iter_count);
+              abe_prof_end(ABE_PROF_RK4, t_abe);
 
 #ifndef WithShell
               if (lev > 0) // fix BD point
 #endif
+              {
+              t_abe = abe_prof_begin();
                 f_sommerfeld_rout(cg->shape, cg->X[0], cg->X[1], cg->X[2],
-                                  Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2], 
+                                  Pp->data->bbox[0], Pp->data->bbox[1], Pp->data->bbox[2],
                                   Pp->data->bbox[3], Pp->data->bbox[4], Pp->data->bbox[5],
-                                  dT_lev, 
+                                  dT_lev,
                                   cg->fgfs[phi0->sgfn],
-                                  cg->fgfs[Lap0->sgfn], 
-                                  cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], 
+                                  cg->fgfs[Lap0->sgfn],
+                                  cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn],
                                   varl0->data->SoA,
                                   Symmetry, cor);
+              abe_prof_end(ABE_PROF_BOUNDARY, t_abe);
+              }
 
 #if (SommerType == 1)
               if (lev == 1) // shibata type sommerfeld
@@ -3519,7 +3572,9 @@ void bssn_class::Step(int lev, int YN)
               varlrhs = varlrhs->next;
             }
           }
+          t_abe = abe_prof_begin();
           f_lowerboundset(cg->shape, cg->fgfs[phi1->sgfn], chitiny);
+          abe_prof_end(ABE_PROF_BOUNDARY, t_abe);
         }
         if (BP == Pp->data->ble)
           break;
@@ -3531,7 +3586,9 @@ void bssn_class::Step(int lev, int YN)
     // check error information
     {
       int erh = ERROR;
+      const double t_allred = abe_fine_begin();
       MPI_Allreduce(&erh, &ERROR, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+      abe_fine_end(ABE_FINE_ERR_ALLREDUCE, lev, t_allred);
     }
 
     if (ERROR)
@@ -3704,7 +3761,9 @@ void bssn_class::Step(int lev, int YN)
     }
 #endif
 
+    t_abe = abe_prof_begin();
     Parallel::Sync(GH->PatL[lev], SynchList_cor, Symmetry);
+    abe_prof_end(ABE_PROF_SYNC, t_abe);
 
 #ifdef WithShell
     if (lev == 0)
@@ -3762,6 +3821,7 @@ void bssn_class::Step(int lev, int YN)
     // swap time level
     if (iter_count < 3)
     {
+    t_abe = abe_prof_begin();
       Pp = GH->PatL[lev];
       while (Pp)
       {
@@ -3776,6 +3836,7 @@ void bssn_class::Step(int lev, int YN)
         }
         Pp = Pp->next;
       }
+    abe_prof_other_fine_end(ABE_FINE_SWAP_PRE_COR, lev, t_abe);
 #ifdef WithShell
       if (lev == 0)
       {
@@ -3839,6 +3900,7 @@ void bssn_class::Step(int lev, int YN)
   //
   // OldStateList  old -----------
   // update
+  t_abe = abe_prof_begin();
   Pp = GH->PatL[lev];
   while (Pp)
   {
@@ -3854,6 +3916,7 @@ void bssn_class::Step(int lev, int YN)
     }
     Pp = Pp->next;
   }
+  abe_prof_other_fine_end(ABE_FINE_SWAP_STATE_OLD, lev, t_abe);
 #ifdef WithShell
   if (lev == 0)
   {
@@ -3885,6 +3948,7 @@ void bssn_class::Step(int lev, int YN)
 #endif
   }
 #endif
+  t_abe = abe_prof_begin();
   // for black hole position
   if (BH_num > 0 && lev == GH->levels - 1)
   {
@@ -3895,6 +3959,7 @@ void bssn_class::Step(int lev, int YN)
       Porg0[ithBH][2] = Porg1[ithBH][2];
     }
   }
+  abe_prof_other_fine_end(ABE_FINE_BH_FINAL_COPY, lev, t_abe);
 }
 
 //================================================================================================
@@ -6941,6 +7006,9 @@ void bssn_class::compute_Porg_rhs(double **BH_PS, double **BH_RHS, var *forx, va
 
 void bssn_class::AnalysisStuff(int lev, double dT_lev)
 {
+#if ENABLE_V7_WAVE_PROFILING
+  V14AnalysisScope v14_analysis_scope(V14_ANALYSIS_TOTAL);
+#endif
   LastAnas += dT_lev;
 
   if (LastAnas >= AnasTime)
@@ -7137,7 +7205,9 @@ void bssn_class::AnalysisStuff(int lev, double dT_lev)
 #endif
     }
 #else
+    const double t3_psi4 = abe_l3_begin();
     Compute_Psi4(lev);
+    abe_l3_end(ABE_L3_COMPUTE_PSI4, lev, t3_psi4);
 #endif
     double *RP, *IP, *RoutMAP;
     int NN = 0;
@@ -7215,12 +7285,16 @@ void bssn_class::AnalysisStuff(int lev, double dT_lev)
       }
 #else
 #if (PSTR == 0)
+      const double t3_sw = abe_l3_begin();
       Waveshell->surf_Wave(Rex, lev, GH, Rpsi4, Ipsi4, 2, maxl, NN, RP, IP, ErrorMonitor);
+      abe_l3_end(ABE_L3_SURF_WAVE, lev, t3_sw);
+      const double t3_sm = abe_l3_begin();
       Waveshell->surf_MassPAng(Rex, lev, GH, phi0, trK0,
                                gxx0, gxy0, gxz0, gyy0, gyz0, gzz0,
                                Axx0, Axy0, Axz0, Ayy0, Ayz0, Azz0,
                                Gmx0, Gmy0, Gmz0, Sfx1, Sfy1, Sfz1, // here we can not touch rhs variables, but 1 variables
                                RoutMAP, ErrorMonitor);
+      abe_l3_end(ABE_L3_SURF_MASS, lev, t3_sm);
 #elif (PSTR == 1 || PSTR == 2)
       Waveshell->surf_Wave(Rex, lev, GH, Rpsi4, Ipsi4, 2, maxl, NN, RP, IP, ErrorMonitor, GH->Commlev[lev]);
       //        misc::tillherecheck(GH->Commlev[lev],GH->start_rank[lev],"after surf_Wave");
@@ -7257,8 +7331,12 @@ void bssn_class::AnalysisStuff(int lev, double dT_lev)
         }
       }
 #endif
+      const double t3_pw = abe_l3_begin();
       Psi4Monitor->writefile(PhysTime, NN, RP, IP);
+      abe_l3_end(ABE_L3_PSI4_WRITE, lev, t3_pw);
+      const double t3_mw = abe_l3_begin();
       MAPMonitor->writefile(PhysTime, 7, RoutMAP);
+      abe_l3_end(ABE_L3_MAP_WRITE, lev, t3_mw);
       Rex = Rex - drex;
     }
     delete[] RP;
@@ -7272,7 +7350,9 @@ void bssn_class::AnalysisStuff(int lev, double dT_lev)
       for (int bhi = 0; bhi < BH_num; bhi++)
         for (int i = 0; i < dim; i++)
           pox[dim * bhi + i] = Porg0[bhi][i];
+      const double t3_bh = abe_l3_begin();
       BHMonitor->writefile(PhysTime, dim * BH_num, pox);
+      abe_l3_end(ABE_L3_BH_WRITE, lev, t3_bh);
       delete[] pox;
     }
 

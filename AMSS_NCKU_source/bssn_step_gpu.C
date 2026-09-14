@@ -110,6 +110,7 @@ void bssn_class::Step_GPU(int lev, int YN)
         // rk4 substep and boundary
         {
           MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varlrhs = RHSList; // we do not check the correspondence here
+          int gpu_rk_variable = 0;
           while (varl0)
           {
 #if (SommerType == 0)
@@ -123,8 +124,8 @@ void bssn_class::Step_GPU(int lev, int YN)
 
 #endif
 #endif
-            f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                               iter_count);
+            gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                 iter_count, gpu_rk_variable++);
 #ifndef WithShell
             if (lev > 0) // fix BD point
 #endif
@@ -203,6 +204,7 @@ void bssn_class::Step_GPU(int lev, int YN)
           // rk4 substep and boundary
           {
             MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varlrhs = RHSList; // we do not check the correspondence here
+            int gpu_rk_variable = 0;
             while (varl0)
             {
               // sommerfeld indeed for outter boudary while fix BD for inner boundary
@@ -212,8 +214,8 @@ void bssn_class::Step_GPU(int lev, int YN)
                                       cg->fgfs[varl0->data->sgfn], varl0->data->propspeed, varl0->data->SoA,
                                       Symmetry);
 
-              f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                                 iter_count);
+              gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                   iter_count, gpu_rk_variable++);
 
               varl0 = varl0->next;
               varl = varl->next;
@@ -352,6 +354,7 @@ void bssn_class::Step_GPU(int lev, int YN)
           // rk4 substep and boundary
           {
             MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varl1 = SynchList_cor, *varlrhs = RHSList; // we do not check the correspondence here
+            int gpu_rk_variable = 0;
             while (varl0)
             {
 #if (SommerType == 0)
@@ -364,8 +367,8 @@ void bssn_class::Step_GPU(int lev, int YN)
                                      Symmetry);
 #endif
 #endif
-              f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                                 iter_count);
+              gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                   iter_count, gpu_rk_variable++);
 
 #ifndef WithShell
               if (lev > 0) // fix BD point
@@ -451,6 +454,7 @@ void bssn_class::Step_GPU(int lev, int YN)
             // rk4 substep and boundary
             {
               MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varl1 = SynchList_cor, *varlrhs = RHSList; // we do not check the correspondence here
+              int gpu_rk_variable = 0;
               while (varl0)
               {
                 // sommerfeld indeed for outter boudary while fix BD for inner boundary
@@ -460,8 +464,8 @@ void bssn_class::Step_GPU(int lev, int YN)
                                         cg->fgfs[varl->data->sgfn], varl0->data->propspeed, varl0->data->SoA,
                                         Symmetry);
 
-                f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                                   iter_count);
+                gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                     iter_count, gpu_rk_variable++);
 
                 varl0 = varl0->next;
                 varl = varl->next;
@@ -1036,6 +1040,7 @@ void bssn_class::Step_GPU(int lev, int YN)
             // rk4 substep and boundary
             {
               MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varl1 = SynchList_cor, *varlrhs = RHSList; // we do not check the correspondence here
+              int gpu_rk_variable = 0;
               while (varl0)
               {
                 // sommerfeld indeed for outter boudary while fix BD for inner boundary
@@ -1045,8 +1050,8 @@ void bssn_class::Step_GPU(int lev, int YN)
                                         cg->fgfs[varl->data->sgfn], varl0->data->propspeed, varl0->data->SoA,
                                         Symmetry);
 
-                f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                                   iter_count);
+                gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                     iter_count, gpu_rk_variable++);
 
                 varl0 = varl0->next;
                 varl = varl->next;
@@ -1347,6 +1352,7 @@ void bssn_class::Step_GPU(int lev, int YN)
         // rk4 substep and boundary
         {
           MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varlrhs = RHSList; // we do not check the correspondence here
+          int gpu_rk_variable = 0;
           while (varl0)
           {
 #if (SommerType == 0)
@@ -1360,8 +1366,8 @@ void bssn_class::Step_GPU(int lev, int YN)
 
 #endif
 #endif
-            f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                               iter_count);
+            gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                 iter_count, gpu_rk_variable++);
 #ifndef WithShell
             if (lev > 0) // fix BD point
 #endif
@@ -1490,6 +1496,7 @@ void bssn_class::Step_GPU(int lev, int YN)
           // rk4 substep and boundary
           {
             MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varl1 = SynchList_cor, *varlrhs = RHSList; // we do not check the correspondence here
+            int gpu_rk_variable = 0;
             while (varl0)
             {
 #if (SommerType == 0)
@@ -1502,8 +1509,8 @@ void bssn_class::Step_GPU(int lev, int YN)
                                      Symmetry);
 #endif
 #endif
-              f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                                 iter_count);
+              gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                   iter_count, gpu_rk_variable++);
 
 #ifndef WithShell
               if (lev > 0) // fix BD point
@@ -1733,6 +1740,7 @@ void bssn_class::SHStep()
         // rk4 substep and boundary
         {
           MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varlrhs = RHSList; // we do not check the correspondence here
+          int gpu_rk_variable = 0;
           while (varl0)
           {
             // sommerfeld indeed for outter boudary while fix BD for inner boundary
@@ -1742,8 +1750,8 @@ void bssn_class::SHStep()
                                     cg->fgfs[varl0->data->sgfn], varl0->data->propspeed, varl0->data->SoA,
                                     Symmetry);
 
-            f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                               iter_count);
+            gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                 iter_count, gpu_rk_variable++);
 
             varl0 = varl0->next;
             varl = varl->next;
@@ -1830,6 +1838,7 @@ void bssn_class::SHStep()
             // rk4 substep and boundary
             {
               MyList<var> *varl0 = StateList, *varl = SynchList_pre, *varl1 = SynchList_cor, *varlrhs = RHSList; // we do not check the correspondence here
+              int gpu_rk_variable = 0;
               while (varl0)
               {
                 // sommerfeld indeed for outter boudary while fix BD for inner boundary
@@ -1839,8 +1848,8 @@ void bssn_class::SHStep()
                                         cg->fgfs[varl->data->sgfn], varl0->data->propspeed, varl0->data->SoA,
                                         Symmetry);
 
-                f_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
-                                   iter_count);
+                gpu_rungekutta4_rout(cg->shape, dT_lev, cg->fgfs[varl0->data->sgfn], cg->fgfs[varl1->data->sgfn], cg->fgfs[varlrhs->data->sgfn],
+                                     iter_count, gpu_rk_variable++);
 
                 varl0 = varl0->next;
                 varl = varl->next;

@@ -137,3 +137,7 @@ Please set the computing resources according to your own computer (set the numbe
 This code includes the C++ / Fortran codes from the original AMSS-NCKU code. A small number of functions are referenced from BAM.
 
 Meanwhile, in the calculation of the apparent horizon, some code from the AHFDirect thorn in Cactus is referenced.
+
+## Final optimized version
+
+See [`V7/end.md`](V7/end.md) for the final optimization summary and performance results.

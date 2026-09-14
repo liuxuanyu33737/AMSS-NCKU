@@ -7,6 +7,9 @@
 #define f_pointcopy pointcopy
 #define f_copy copy
 #define f_global_interp global_interp
+#ifdef Cell
+#define f_global_interp_batch17 global_interp_batch17
+#endif
 #define f_global_interp_ss global_interp_ss
 #define f_global_interp_ss_2d global_interp_ss_2d
 #define f_global_interpind global_interpind
@@ -36,6 +39,9 @@
 #define f_pointcopy POINTCOPY
 #define f_copy COPY
 #define f_global_interp GLOBAL_INTERP
+#ifdef Cell
+#define f_global_interp_batch17 GLOBAL_INTERP_BATCH17
+#endif
 #define f_global_interp_ss GLOBAL_INTERP_SS
 #define f_global_interp_ss_2d GLOBAL_INTERP_SS_2D
 #define f_global_interpind GLOBAL_INTERPIND
@@ -65,6 +71,9 @@
 #define f_pointcopy pointcopy_
 #define f_copy copy_
 #define f_global_interp global_interp_
+#ifdef Cell
+#define f_global_interp_batch17 global_interp_batch17_
+#endif
 #define f_global_interp_ss global_interp_ss_
 #define f_global_interp_ss_2d global_interp_ss_2d_
 #define f_global_interpind global_interpind_
@@ -112,6 +121,19 @@ extern "C"
 						 double &, double &, double &,
 						 int &, double *, int &);
 }
+
+#ifdef Cell
+extern "C"
+{
+	void f_global_interp_batch17(int *, double *, double *, double *,
+								 double *, double *, double *, double *, double *,
+								 double *, double *, double *, double *, double *,
+								 double *, double *, double *, double *, double *,
+								 double *, double *,
+								 double *, double &, double &, double &,
+								 int &, double *, int &, int &);
+}
+#endif
 
 extern "C"
 {

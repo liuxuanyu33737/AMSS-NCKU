@@ -34,7 +34,11 @@
 using namespace std;
 
 #include "myglobal.h"
+#ifdef USE_GPU
+#include "bssn_gpu_class.h"
+#else
 #include "bssn_class.h"
+#endif
 
 namespace AHFinderDirect
 {

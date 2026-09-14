@@ -1,6 +1,14 @@
-
-
+!
 #include "macrodef.fh"
+#include "v7_rhs_profile.h"
+
+#ifndef VERIFY_V7_SHIFT_FUSION
+#define VERIFY_V7_SHIFT_FUSION 0
+#endif
+
+#ifndef VERIFY_V7_CHI_RICCI_FUSION
+#define VERIFY_V7_CHI_RICCI_FUSION 0
+#endif
 
   function compute_rhs_bssn(ex, T,X, Y, Z,                                     &
                chi    ,   trK    ,                                             &
@@ -63,6 +71,12 @@
 !  gont = 0: success; gont = 1: something wrong
   integer::gont
 
+#if ENABLE_V7_RHS_PROFILING
+  real*8 :: v7_rhs_tmark,v7_rhs_ttotal,v14_subtime
+  real*8 v7_rhs_wtime
+  external v7_rhs_wtime
+#endif
+
 !~~~~~~> Other variables:
 
   real*8, dimension(ex(1),ex(2),ex(3)) :: gxx,gyy,gzz
@@ -82,6 +96,27 @@
   real*8, dimension(ex(1),ex(2),ex(3)) :: Gamxa,Gamya,Gamza,alpn1,chin1
   real*8, dimension(ex(1),ex(2),ex(3)) :: gupxx,gupxy,gupxz
   real*8, dimension(ex(1),ex(2),ex(3)) :: gupyy,gupyz,gupzz
+  real*8 :: v7_chi0,v7_inv_chi,v7_inv_2chi,v7_chi_f
+  real*8 :: v7_cx,v7_cy,v7_cz,v7_cxx,v7_cxy,v7_cxz,v7_cyy,v7_cyz,v7_czz
+  integer :: v7_chi_i,v7_chi_j,v7_chi_k
+#if VERIFY_V7_CHI_RICCI_FUSION
+  real*8 :: v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel,v7_chi_den,v7_chi_old_f
+  real*8 :: v7_chi_rxx0,v7_chi_rxy0,v7_chi_rxz0,v7_chi_ryy0,v7_chi_ryz0,v7_chi_rzz0
+  integer :: v7_chi_p,v7_chi_sample
+  integer, dimension(4) :: v7_chi_si,v7_chi_sj,v7_chi_sk
+  integer, save :: v7_chi_verify_calls=0
+#endif
+
+#if VERIFY_V7_SHIFT_FUSION
+  real*8, dimension(ex(1),ex(2),ex(3)) :: v7_bxxx,v7_bxxy,v7_bxxz,v7_bxyy,v7_bxyz,v7_bxzz
+  real*8, dimension(ex(1),ex(2),ex(3)) :: v7_byxx,v7_byxy,v7_byxz,v7_byyy,v7_byyz,v7_byzz
+  real*8, dimension(ex(1),ex(2),ex(3)) :: v7_bzxx,v7_bzxy,v7_bzxz,v7_bzyy,v7_bzyz,v7_bzzz
+  real*8 :: v7_old_gradx,v7_old_grady,v7_old_gradz
+  real*8 :: v7_old_lapx,v7_old_lapy,v7_old_lapz,v7_den
+  integer :: v7_p,v7_si,v7_sj,v7_sk
+  integer, dimension(5) :: v7_i,v7_j,v7_k
+  integer, save :: v7_verify_calls=0
+#endif
 
   real*8,dimension(3) ::SSS,AAS,ASA,SAA,ASS,SAS,SSA
   real*8            :: dX, dY, dZ, PI
@@ -91,6 +126,11 @@
   double precision,parameter::FF = 0.75d0,eta=2.d0
   real*8, parameter :: F1o3 = 1.D0/3.D0, F2o3 = 2.D0/3.D0,F3o2=1.5d0, F1o6 = 1.D0/6.D0
   real*8, parameter :: F16=1.6d1,F8=8.d0
+
+#if ENABLE_V7_RHS_PROFILING
+  v7_rhs_tmark=v7_rhs_wtime()
+  v7_rhs_ttotal=v7_rhs_tmark
+#endif
 
 #if (GAUGE == 2 || GAUGE == 3 || GAUGE == 4 || GAUGE == 5)
   real*8, dimension(ex(1),ex(2),ex(3)) :: reta
@@ -134,6 +174,9 @@
      if(sum(betay).ne.sum(betay))write(*,*)"bssn.f90: find NaN in betay"
      if(sum(betaz).ne.sum(betaz))write(*,*)"bssn.f90: find NaN in betaz"
      gont = 1
+#if ENABLE_V7_RHS_PROFILING
+     call v7_rhs_profile_stop(1,v7_rhs_tmark,v7_rhs_ttotal)
+#endif
      return
   endif
 
@@ -149,16 +192,34 @@
   gyy = dyy + ONE
   gzz = dzz + ONE
 
-  call fderivs(ex,betax,betaxx,betaxy,betaxz,X,Y,Z,ANTI, SYM, SYM,Symmetry,Lev)
-  call fderivs(ex,betay,betayx,betayy,betayz,X,Y,Z, SYM,ANTI, SYM,Symmetry,Lev)
-  call fderivs(ex,betaz,betazx,betazy,betazz,X,Y,Z, SYM, SYM,ANTI,Symmetry,Lev)
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(1,v7_rhs_tmark)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
+  call fderivs_shift3(ex,betax,betay,betaz, &
+       betaxx,betaxy,betaxz,betayx,betayy,betayz, &
+       betazx,betazy,betazz,X,Y,Z,Symmetry,Lev)
   
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(15,v14_subtime)
+#endif
   div_beta = betaxx + betayy + betazz
  
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   call fderivs(ex,chi,chix,chiy,chiz,X,Y,Z,SYM,SYM,SYM,symmetry,Lev)
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(16,v14_subtime)
+#endif
   chi_rhs = F2o3 *chin1*( alpn1 * trK - div_beta ) !rhs for chi
 
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   call fderivs(ex,dxx,gxxx,gxxy,gxxz,X,Y,Z,SYM ,SYM ,SYM ,Symmetry,Lev)
   call fderivs(ex,gxy,gxyx,gxyy,gxyz,X,Y,Z,ANTI,ANTI,SYM ,Symmetry,Lev)
   call fderivs(ex,gxz,gxzx,gxzy,gxzz,X,Y,Z,ANTI,SYM ,ANTI,Symmetry,Lev)
@@ -166,6 +227,9 @@
   call fderivs(ex,gyz,gyzx,gyzy,gyzz,X,Y,Z,SYM ,ANTI,ANTI,Symmetry,Lev)
   call fderivs(ex,dzz,gzzx,gzzy,gzzz,X,Y,Z,SYM ,SYM ,SYM ,Symmetry,Lev)
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(17,v14_subtime)
+#endif
   gxx_rhs = - TWO * alpn1 * Axx    -  F2o3 * gxx * div_beta          + &
               TWO *(  gxx * betaxx +   gxy * betayx +   gxz * betazx)
 
@@ -190,6 +254,9 @@
                                        gyz * betayx +   gzz * betazx   &
                                                     -   gxz * betayy     !rhs for gij
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(2,v7_rhs_tmark)
+#endif
 ! invert tilted metric
   gupzz =  gxx * gyy * gzz + gxy * gyz * gxz + gxz * gxy * gyz - &
            gxz * gyy * gxz - gxy * gxy * gzz - gxx * gyz * gyz
@@ -200,6 +267,9 @@
   gupyz = - ( gxx * gyz - gxy * gxz ) / gupzz
   gupzz =   ( gxx * gyy - gxy * gxy ) / gupzz
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(3,v7_rhs_tmark)
+#endif
   if(co == 0)then
 ! Gam^i_Res = Gam^i + gup^ij_,j
   Gmx_Res = Gamx - (gupxx*(gupxx*gxxx+gupxy*gxyx+gupxz*gxzx)&
@@ -312,17 +382,84 @@
                         Gamzxx * Rxx + Gamzyy * Ryy + Gamzzz * Rzz   + &
                 TWO * ( Gamzxy * Rxy + Gamzxz * Rxz + Gamzyz * Ryz ) )
 
-  call fdderivs(ex,betax,gxxx,gxyx,gxzx,gyyx,gyzx,gzzx,&
-                X,Y,Z,ANTI,SYM, SYM ,Symmetry,Lev)
-  call fdderivs(ex,betay,gxxy,gxyy,gxzy,gyyy,gyzy,gzzy,&
-                X,Y,Z,SYM ,ANTI,SYM ,Symmetry,Lev)
-  call fdderivs(ex,betaz,gxxz,gxyz,gxzz,gyyz,gyzz,gzzz,&
-                X,Y,Z,SYM ,SYM, ANTI,Symmetry,Lev)
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(4,v7_rhs_tmark)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
+  call fdderivs_shift_fusion(ex,betax,betay,betaz, &
+       gupxx,gupxy,gupxz,gupyy,gupyz,gupzz, &
+       fxx,fxy,fxz,gxxx,gxxy,gxxz,X,Y,Z,Symmetry,Lev)
 
-  fxx = gxxx + gxyy + gxzz
-  fxy = gxyx + gyyy + gyzz
-  fxz = gxzx + gyzy + gzzz
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(18,v14_subtime)
+#endif
+#if VERIFY_V7_SHIFT_FUSION
+  if(v7_verify_calls == 0)then
+    call fdderivs(ex,betax,v7_bxxx,v7_bxxy,v7_bxxz,v7_bxyy,v7_bxyz,v7_bxzz, &
+                  X,Y,Z,ANTI,SYM,SYM,Symmetry,Lev)
+    call fdderivs(ex,betay,v7_byxx,v7_byxy,v7_byxz,v7_byyy,v7_byyz,v7_byzz, &
+                  X,Y,Z,SYM,ANTI,SYM,Symmetry,Lev)
+    call fdderivs(ex,betaz,v7_bzxx,v7_bzxy,v7_bzxz,v7_bzyy,v7_bzyz,v7_bzzz, &
+                  X,Y,Z,SYM,SYM,ANTI,Symmetry,Lev)
 
+    v7_i=(/1,min(2,ex(1)),min(3,ex(1)),max(1,ex(1)/2),max(1,ex(1)-2)/)
+    v7_j=(/1,min(2,ex(2)),min(3,ex(2)),max(1,ex(2)/2),max(1,ex(2)-2)/)
+    v7_k=(/1,min(2,ex(3)),min(3,ex(3)),max(1,ex(3)/2),max(1,ex(3)-2)/)
+
+    do v7_p=1,5
+      v7_si=v7_i(v7_p)
+      v7_sj=v7_j(v7_p)
+      v7_sk=v7_k(v7_p)
+      v7_old_gradx=v7_bxxx(v7_si,v7_sj,v7_sk)+v7_byxy(v7_si,v7_sj,v7_sk)+v7_bzxz(v7_si,v7_sj,v7_sk)
+      v7_old_grady=v7_bxxy(v7_si,v7_sj,v7_sk)+v7_byyy(v7_si,v7_sj,v7_sk)+v7_bzyz(v7_si,v7_sj,v7_sk)
+      v7_old_gradz=v7_bxxz(v7_si,v7_sj,v7_sk)+v7_byyz(v7_si,v7_sj,v7_sk)+v7_bzzz(v7_si,v7_sj,v7_sk)
+      v7_old_lapx=gupxx(v7_si,v7_sj,v7_sk)*v7_bxxx(v7_si,v7_sj,v7_sk)+ &
+           gupyy(v7_si,v7_sj,v7_sk)*v7_bxyy(v7_si,v7_sj,v7_sk)+gupzz(v7_si,v7_sj,v7_sk)*v7_bxzz(v7_si,v7_sj,v7_sk)+ &
+           TWO*(gupxy(v7_si,v7_sj,v7_sk)*v7_bxxy(v7_si,v7_sj,v7_sk)+gupxz(v7_si,v7_sj,v7_sk)*v7_bxxz(v7_si,v7_sj,v7_sk)+ &
+           gupyz(v7_si,v7_sj,v7_sk)*v7_bxyz(v7_si,v7_sj,v7_sk))
+      v7_old_lapy=gupxx(v7_si,v7_sj,v7_sk)*v7_byxx(v7_si,v7_sj,v7_sk)+ &
+           gupyy(v7_si,v7_sj,v7_sk)*v7_byyy(v7_si,v7_sj,v7_sk)+gupzz(v7_si,v7_sj,v7_sk)*v7_byzz(v7_si,v7_sj,v7_sk)+ &
+           TWO*(gupxy(v7_si,v7_sj,v7_sk)*v7_byxy(v7_si,v7_sj,v7_sk)+gupxz(v7_si,v7_sj,v7_sk)*v7_byxz(v7_si,v7_sj,v7_sk)+ &
+           gupyz(v7_si,v7_sj,v7_sk)*v7_byyz(v7_si,v7_sj,v7_sk))
+      v7_old_lapz=gupxx(v7_si,v7_sj,v7_sk)*v7_bzxx(v7_si,v7_sj,v7_sk)+ &
+           gupyy(v7_si,v7_sj,v7_sk)*v7_bzyy(v7_si,v7_sj,v7_sk)+gupzz(v7_si,v7_sj,v7_sk)*v7_bzzz(v7_si,v7_sj,v7_sk)+ &
+           TWO*(gupxy(v7_si,v7_sj,v7_sk)*v7_bzxy(v7_si,v7_sj,v7_sk)+gupxz(v7_si,v7_sj,v7_sk)*v7_bzxz(v7_si,v7_sj,v7_sk)+ &
+           gupyz(v7_si,v7_sj,v7_sk)*v7_bzyz(v7_si,v7_sj,v7_sk))
+
+      v7_den=max(dabs(v7_old_gradx),1.d-300)
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_SHIFT gradx ',v7_si,v7_sj,v7_sk,' old/new/abs/rel ', &
+           v7_old_gradx,fxx(v7_si,v7_sj,v7_sk),dabs(v7_old_gradx-fxx(v7_si,v7_sj,v7_sk)), &
+           dabs(v7_old_gradx-fxx(v7_si,v7_sj,v7_sk))/v7_den
+      v7_den=max(dabs(v7_old_grady),1.d-300)
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_SHIFT grady ',v7_si,v7_sj,v7_sk,' old/new/abs/rel ', &
+           v7_old_grady,fxy(v7_si,v7_sj,v7_sk),dabs(v7_old_grady-fxy(v7_si,v7_sj,v7_sk)), &
+           dabs(v7_old_grady-fxy(v7_si,v7_sj,v7_sk))/v7_den
+      v7_den=max(dabs(v7_old_gradz),1.d-300)
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_SHIFT gradz ',v7_si,v7_sj,v7_sk,' old/new/abs/rel ', &
+           v7_old_gradz,fxz(v7_si,v7_sj,v7_sk),dabs(v7_old_gradz-fxz(v7_si,v7_sj,v7_sk)), &
+           dabs(v7_old_gradz-fxz(v7_si,v7_sj,v7_sk))/v7_den
+      v7_den=max(dabs(v7_old_lapx),1.d-300)
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_SHIFT lapx  ',v7_si,v7_sj,v7_sk,' old/new/abs/rel ', &
+           v7_old_lapx,gxxx(v7_si,v7_sj,v7_sk),dabs(v7_old_lapx-gxxx(v7_si,v7_sj,v7_sk)), &
+           dabs(v7_old_lapx-gxxx(v7_si,v7_sj,v7_sk))/v7_den
+      v7_den=max(dabs(v7_old_lapy),1.d-300)
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_SHIFT lapy  ',v7_si,v7_sj,v7_sk,' old/new/abs/rel ', &
+           v7_old_lapy,gxxy(v7_si,v7_sj,v7_sk),dabs(v7_old_lapy-gxxy(v7_si,v7_sj,v7_sk)), &
+           dabs(v7_old_lapy-gxxy(v7_si,v7_sj,v7_sk))/v7_den
+      v7_den=max(dabs(v7_old_lapz),1.d-300)
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_SHIFT lapz  ',v7_si,v7_sj,v7_sk,' old/new/abs/rel ', &
+           v7_old_lapz,gxxz(v7_si,v7_sj,v7_sk),dabs(v7_old_lapz-gxxz(v7_si,v7_sj,v7_sk)), &
+           dabs(v7_old_lapz-gxxz(v7_si,v7_sj,v7_sk))/v7_den
+    enddo
+    v7_verify_calls=v7_verify_calls+1
+  endif
+#endif
+
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   Gamxa =       gupxx * Gamxxx + gupyy * Gamxyy + gupzz * Gamxzz + &
           TWO*( gupxy * Gamxxy + gupxz * Gamxxz + gupyz * Gamxyz )
   Gamya =       gupxx * Gamyxx + gupyy * Gamyyy + gupzz * Gamyzz + &
@@ -330,28 +467,43 @@
   Gamza =       gupxx * Gamzxx + gupyy * Gamzyy + gupzz * Gamzzz + &
           TWO*( gupxy * Gamzxy + gupxz * Gamzxz + gupyz * Gamzyz )
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(19,v14_subtime)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   call fderivs(ex,Gamx,Gamxx,Gamxy,Gamxz,X,Y,Z,ANTI,SYM ,SYM ,Symmetry,Lev)
   call fderivs(ex,Gamy,Gamyx,Gamyy,Gamyz,X,Y,Z,SYM ,ANTI,SYM ,Symmetry,Lev)
   call fderivs(ex,Gamz,Gamzx,Gamzy,Gamzz,X,Y,Z,SYM ,SYM ,ANTI,Symmetry,Lev)
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(20,v14_subtime)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   Gamx_rhs =               Gamx_rhs +  F2o3 *  Gamxa * div_beta        - &
                      Gamxa * betaxx - Gamya * betaxy - Gamza * betaxz  + &
              F1o3 * (gupxx * fxx    + gupxy * fxy    + gupxz * fxz    ) + &
-                     gupxx * gxxx   + gupyy * gyyx   + gupzz * gzzx    + &
-              TWO * (gupxy * gxyx   + gupxz * gxzx   + gupyz * gyzx  )
+                     gxxx
 
   Gamy_rhs =               Gamy_rhs +  F2o3 *  Gamya * div_beta        - &
                      Gamxa * betayx - Gamya * betayy - Gamza * betayz  + &
              F1o3 * (gupxy * fxx    + gupyy * fxy    + gupyz * fxz    ) + &
-                     gupxx * gxxy   + gupyy * gyyy   + gupzz * gzzy    + &
-              TWO * (gupxy * gxyy   + gupxz * gxzy   + gupyz * gyzy  )
+                     gxxy
 
   Gamz_rhs =               Gamz_rhs +  F2o3 *  Gamza * div_beta        - &
                      Gamxa * betazx - Gamya * betazy - Gamza * betazz  + &
              F1o3 * (gupxz * fxx    + gupyz * fxy    + gupzz * fxz    ) + &
-                     gupxx * gxxz   + gupyy * gyyz   + gupzz * gzzz    + &
-              TWO * (gupxy * gxyz   + gupxz * gxzz   + gupyz * gyzz  )    !rhs for Gam^i
+                     gxxz                                                   !rhs for Gam^i
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(21,v14_subtime)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(5,v7_rhs_tmark)
+#endif
 !first kind of connection stored in gij,k
   gxxx = gxx * Gamxxx + gxy * Gamyxx + gxz * Gamzxx
   gxyx = gxx * Gamxxy + gxy * Gamyxy + gxz * Gamzxy
@@ -374,6 +526,9 @@
   gyzz = gxz * Gamxyz + gyz * Gamyyz + gzz * Gamzyz
   gzzz = gxz * Gamxzz + gyz * Gamyzz + gzz * Gamzzz
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(6,v7_rhs_tmark)
+#endif
 !compute Ricci tensor for tilted metric
    call fdderivs(ex,dxx,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM ,SYM ,SYM ,symmetry,Lev)
    Rxx =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
@@ -398,7 +553,6 @@
    call fdderivs(ex,gyz,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM ,ANTI ,ANTI,symmetry,Lev)
    Ryz =   gupxx * fxx + gupyy * fyy + gupzz * fzz + &
          ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) * TWO
-
   Rxx =     - HALF * Rxx                                   + &
                gxx * Gamxx+ gxy * Gamyx   +    gxz * Gamzx + &
              Gamxa * gxxx +  Gamya * gxyx +  Gamza * gxzx  + &
@@ -599,6 +753,10 @@
             Gamxyz * gxzz + Gamyyz * gyzz + Gamzyz * gzzz  + &
             Gamxzz * gxzy + Gamyzz * gyzy + Gamzzz * gzzy  + &
             Gamxyz * gzzx + Gamyyz * gzzy + Gamzyz * gzzz )
+
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(7,v7_rhs_tmark)
+#endif
 !covariant second derivative of chi respect to tilted metric
   call fdderivs(ex,chi,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z,SYM,SYM,SYM,Symmetry,Lev)
 
@@ -608,27 +766,138 @@
   fyy = fyy - Gamxyy * chix - Gamyyy * chiy - Gamzyy * chiz
   fyz = fyz - Gamxyz * chix - Gamyyz * chiy - Gamzyz * chiz
   fzz = fzz - Gamxzz * chix - Gamyzz * chiy - Gamzzz * chiz
-! Store D^l D_l chi - 3/(2*chi) D^l chi D_l chi in f
+! Fuse the scalar chi contraction and all six Ricci corrections.
+#if VERIFY_V7_CHI_RICCI_FUSION
+  if(v7_chi_verify_calls == 0)then
+    v7_chi_si=(/1,min(2,ex(1)),max(1,ex(1)/2),max(1,ex(1)-1)/)
+    v7_chi_sj=(/1,min(2,ex(2)),max(1,ex(2)/2),max(1,ex(2)-1)/)
+    v7_chi_sk=(/1,min(2,ex(3)),max(1,ex(3)/2),max(1,ex(3)-1)/)
+  endif
+#endif
+  do v7_chi_k=1,ex(3)
+  do v7_chi_j=1,ex(2)
+  do v7_chi_i=1,ex(1)
+    v7_chi0=chin1(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_inv_chi=ONE/v7_chi0
+    v7_inv_2chi=HALF*v7_inv_chi
+    v7_cx=chix(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cy=chiy(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cz=chiz(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cxx=fxx(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cxy=fxy(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cxz=fxz(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cyy=fyy(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_cyz=fyz(v7_chi_i,v7_chi_j,v7_chi_k)
+    v7_czz=fzz(v7_chi_i,v7_chi_j,v7_chi_k)
 
-  f =        gupxx * ( fxx - F3o2/chin1 * chix * chix ) + &
-             gupyy * ( fyy - F3o2/chin1 * chiy * chiy ) + &
-             gupzz * ( fzz - F3o2/chin1 * chiz * chiz ) + &
-       TWO * gupxy * ( fxy - F3o2/chin1 * chix * chiy ) + &
-       TWO * gupxz * ( fxz - F3o2/chin1 * chix * chiz ) + &
-       TWO * gupyz * ( fyz - F3o2/chin1 * chiy * chiz ) 
-! Add chi part to Ricci tensor:
+    v7_chi_f= &
+         gupxx(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cxx-F3o2*v7_inv_chi*v7_cx*v7_cx)+ &
+         gupyy(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cyy-F3o2*v7_inv_chi*v7_cy*v7_cy)+ &
+         gupzz(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_czz-F3o2*v7_inv_chi*v7_cz*v7_cz)+ &
+         TWO*gupxy(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cxy-F3o2*v7_inv_chi*v7_cx*v7_cy)+ &
+         TWO*gupxz(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cxz-F3o2*v7_inv_chi*v7_cx*v7_cz)+ &
+         TWO*gupyz(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cyz-F3o2*v7_inv_chi*v7_cy*v7_cz)
 
-  Rxx = Rxx + (fxx - chix*chix/chin1/TWO + gxx * f)/chin1/TWO
-  Ryy = Ryy + (fyy - chiy*chiy/chin1/TWO + gyy * f)/chin1/TWO
-  Rzz = Rzz + (fzz - chiz*chiz/chin1/TWO + gzz * f)/chin1/TWO
-  Rxy = Rxy + (fxy - chix*chiy/chin1/TWO + gxy * f)/chin1/TWO
-  Rxz = Rxz + (fxz - chix*chiz/chin1/TWO + gxz * f)/chin1/TWO
-  Ryz = Ryz + (fyz - chiy*chiz/chin1/TWO + gyz * f)/chin1/TWO
+#if VERIFY_V7_CHI_RICCI_FUSION
+    v7_chi_sample=0
+    if(v7_chi_verify_calls == 0)then
+      do v7_chi_p=1,4
+        if(v7_chi_i == v7_chi_si(v7_chi_p) .and. v7_chi_j == v7_chi_sj(v7_chi_p) .and. &
+           v7_chi_k == v7_chi_sk(v7_chi_p)) v7_chi_sample=1
+      enddo
+    endif
+    if(v7_chi_sample == 1)then
+      v7_chi_rxx0=Rxx(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_rxy0=Rxy(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_rxz0=Rxz(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_ryy0=Ryy(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_ryz0=Ryz(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_rzz0=Rzz(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_old_f= &
+           gupxx(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cxx-F3o2/v7_chi0*v7_cx*v7_cx)+ &
+           gupyy(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cyy-F3o2/v7_chi0*v7_cy*v7_cy)+ &
+           gupzz(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_czz-F3o2/v7_chi0*v7_cz*v7_cz)+ &
+           TWO*gupxy(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cxy-F3o2/v7_chi0*v7_cx*v7_cy)+ &
+           TWO*gupxz(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cxz-F3o2/v7_chi0*v7_cx*v7_cz)+ &
+           TWO*gupyz(v7_chi_i,v7_chi_j,v7_chi_k)*(v7_cyz-F3o2/v7_chi0*v7_cy*v7_cz)
+    endif
+#endif
 
+    Rxx(v7_chi_i,v7_chi_j,v7_chi_k)=Rxx(v7_chi_i,v7_chi_j,v7_chi_k)+ &
+         (v7_cxx-v7_cx*v7_cx*v7_inv_2chi+gxx(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_f)*v7_inv_2chi
+    Ryy(v7_chi_i,v7_chi_j,v7_chi_k)=Ryy(v7_chi_i,v7_chi_j,v7_chi_k)+ &
+         (v7_cyy-v7_cy*v7_cy*v7_inv_2chi+gyy(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_f)*v7_inv_2chi
+    Rzz(v7_chi_i,v7_chi_j,v7_chi_k)=Rzz(v7_chi_i,v7_chi_j,v7_chi_k)+ &
+         (v7_czz-v7_cz*v7_cz*v7_inv_2chi+gzz(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_f)*v7_inv_2chi
+    Rxy(v7_chi_i,v7_chi_j,v7_chi_k)=Rxy(v7_chi_i,v7_chi_j,v7_chi_k)+ &
+         (v7_cxy-v7_cx*v7_cy*v7_inv_2chi+gxy(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_f)*v7_inv_2chi
+    Rxz(v7_chi_i,v7_chi_j,v7_chi_k)=Rxz(v7_chi_i,v7_chi_j,v7_chi_k)+ &
+         (v7_cxz-v7_cx*v7_cz*v7_inv_2chi+gxz(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_f)*v7_inv_2chi
+    Ryz(v7_chi_i,v7_chi_j,v7_chi_k)=Ryz(v7_chi_i,v7_chi_j,v7_chi_k)+ &
+         (v7_cyz-v7_cy*v7_cz*v7_inv_2chi+gyz(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_f)*v7_inv_2chi
+
+#if VERIFY_V7_CHI_RICCI_FUSION
+    if(v7_chi_sample == 1)then
+      v7_chi_old=v7_chi_rxx0+(v7_cxx-v7_cx*v7_cx/v7_chi0/TWO+ &
+           gxx(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_old_f)/v7_chi0/TWO
+      v7_chi_new=Rxx(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_abs=dabs(v7_chi_old-v7_chi_new); v7_chi_den=max(dabs(v7_chi_old),1.d-300); v7_chi_rel=v7_chi_abs/v7_chi_den
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_CHI Rxx ',v7_chi_i,v7_chi_j,v7_chi_k, &
+           ' old/new/abs/rel ',v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel
+      v7_chi_old=v7_chi_rxy0+(v7_cxy-v7_cx*v7_cy/v7_chi0/TWO+ &
+           gxy(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_old_f)/v7_chi0/TWO
+      v7_chi_new=Rxy(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_abs=dabs(v7_chi_old-v7_chi_new); v7_chi_den=max(dabs(v7_chi_old),1.d-300); v7_chi_rel=v7_chi_abs/v7_chi_den
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_CHI Rxy ',v7_chi_i,v7_chi_j,v7_chi_k, &
+           ' old/new/abs/rel ',v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel
+      v7_chi_old=v7_chi_rxz0+(v7_cxz-v7_cx*v7_cz/v7_chi0/TWO+ &
+           gxz(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_old_f)/v7_chi0/TWO
+      v7_chi_new=Rxz(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_abs=dabs(v7_chi_old-v7_chi_new); v7_chi_den=max(dabs(v7_chi_old),1.d-300); v7_chi_rel=v7_chi_abs/v7_chi_den
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_CHI Rxz ',v7_chi_i,v7_chi_j,v7_chi_k, &
+           ' old/new/abs/rel ',v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel
+      v7_chi_old=v7_chi_ryy0+(v7_cyy-v7_cy*v7_cy/v7_chi0/TWO+ &
+           gyy(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_old_f)/v7_chi0/TWO
+      v7_chi_new=Ryy(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_abs=dabs(v7_chi_old-v7_chi_new); v7_chi_den=max(dabs(v7_chi_old),1.d-300); v7_chi_rel=v7_chi_abs/v7_chi_den
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_CHI Ryy ',v7_chi_i,v7_chi_j,v7_chi_k, &
+           ' old/new/abs/rel ',v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel
+      v7_chi_old=v7_chi_ryz0+(v7_cyz-v7_cy*v7_cz/v7_chi0/TWO+ &
+           gyz(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_old_f)/v7_chi0/TWO
+      v7_chi_new=Ryz(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_abs=dabs(v7_chi_old-v7_chi_new); v7_chi_den=max(dabs(v7_chi_old),1.d-300); v7_chi_rel=v7_chi_abs/v7_chi_den
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_CHI Ryz ',v7_chi_i,v7_chi_j,v7_chi_k, &
+           ' old/new/abs/rel ',v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel
+      v7_chi_old=v7_chi_rzz0+(v7_czz-v7_cz*v7_cz/v7_chi0/TWO+ &
+           gzz(v7_chi_i,v7_chi_j,v7_chi_k)*v7_chi_old_f)/v7_chi0/TWO
+      v7_chi_new=Rzz(v7_chi_i,v7_chi_j,v7_chi_k)
+      v7_chi_abs=dabs(v7_chi_old-v7_chi_new); v7_chi_den=max(dabs(v7_chi_old),1.d-300); v7_chi_rel=v7_chi_abs/v7_chi_den
+      write(*,'(A,3I6,A,4ES25.16)') 'V7_CHI Rzz ',v7_chi_i,v7_chi_j,v7_chi_k, &
+           ' old/new/abs/rel ',v7_chi_old,v7_chi_new,v7_chi_abs,v7_chi_rel
+    endif
+#endif
+  enddo
+  enddo
+  enddo
+#if VERIFY_V7_CHI_RICCI_FUSION
+  if(v7_chi_verify_calls == 0) v7_chi_verify_calls=v7_chi_verify_calls+1
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(8,v7_rhs_tmark)
+#endif
 ! covariant second derivatives of the lapse respect to physical metric
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   call fdderivs(ex,Lap,fxx,fxy,fxz,fyy,fyz,fzz,X,Y,Z, &
                 SYM,SYM,SYM,symmetry,Lev)
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(22,v14_subtime)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   gxxx = (gupxx * chix + gupxy * chiy + gupxz * chiz)/chin1
   gxxy = (gupxy * chix + gupyy * chiy + gupyz * chiz)/chin1
   gxxz = (gupxz * chix + gupyz * chiy + gupzz * chiz)/chin1
@@ -717,6 +986,12 @@
         TWO* ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) )
 #endif
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(23,v14_subtime)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
   Axx_rhs = fxx - gxx * f
   Ayy_rhs = fyy - gyy * f
   Azz_rhs = fzz - gzz * f
@@ -748,7 +1023,7 @@
   f = chin1
 ! store D^i D_i Lap in trK_rhs
   trK_rhs = f*trK_rhs
-          
+
   Axx_rhs =           f * Axx_rhs+ alpn1 * (trK * Axx - TWO * fxx)  + &
            TWO * (  Axx * betaxx +   Axy * betayx +   Axz * betazx )- &
              F2o3 * Axx * div_beta
@@ -776,6 +1051,12 @@
                                      Ayz * betayx +   Azz * betazx  + &
              F1o3 * Axz * div_beta                -   Axz * betayy      !rhs for Aij
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(24,v14_subtime)
+#endif
+#if ENABLE_V7_RHS_PROFILING
+  v14_subtime=v7_rhs_wtime()
+#endif
 ! Compute trace of S_ij
 
   S =  f * ( gupxx * Sxx + gupyy * Syy + gupzz * Szz + &
@@ -786,6 +1067,9 @@
         TWO * ( gupxy * fxy + gupxz * fxz + gupyz * fyz ) + &
        FOUR * PI * ( rho + S ))                                !rhs for trK
   
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(25,v14_subtime)
+#endif
 !!!! gauge variable part
 
   Lap_rhs = -TWO*alpn1*trK
@@ -945,6 +1229,9 @@
 
 !!!!!!!!!advection term part
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(9,v7_rhs_tmark)
+#endif
   call lopsided(ex,X,Y,Z,gxx,gxx_rhs,betax,betay,betaz,Symmetry,SSS)
   call lopsided(ex,X,Y,Z,gxy,gxy_rhs,betax,betay,betaz,Symmetry,AAS)
   call lopsided(ex,X,Y,Z,gxz,gxz_rhs,betax,betay,betaz,Symmetry,ASA)
@@ -980,8 +1267,11 @@
   call lopsided(ex,X,Y,Z,dtSfz,dtSfz_rhs,betax,betay,betaz,Symmetry,SSA)
 #endif
 
-  if(eps>0)then 
-! usual Kreiss-Oliger dissipation      
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(10,v7_rhs_tmark)
+#endif
+  if(eps>0)then
+! usual Kreiss-Oliger dissipation
   call kodis(ex,X,Y,Z,chi,chi_rhs,SSS,Symmetry,eps)
   call kodis(ex,X,Y,Z,trK,trK_rhs,SSS,Symmetry,eps)
   call kodis(ex,X,Y,Z,dxx,gxx_rhs,SSS,Symmetry,eps)
@@ -1041,6 +1331,9 @@ endif
 
   endif
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(11,v7_rhs_tmark)
+#endif
   if(co == 0)then
 ! ham_Res = trR + 2/3 * K^2 - A_ij * A^ij - 16 * PI * rho
 ! here trR is respect to physical metric
@@ -1134,6 +1427,9 @@ movy_Res = movy_Res - F2o3*Ky - F8*PI*sy
 movz_Res = movz_Res - F2o3*Kz - F8*PI*sz
   endif
 
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_mark(12,v7_rhs_tmark)
+#endif
 #if (ABV == 1)
   call ricci_gamma(ex, X, Y, Z,                                      &
                chi,                                                  &
@@ -1181,6 +1477,51 @@ endif
 
   gont = 0
 
-  return
+#if ENABLE_V7_RHS_PROFILING
+  call v7_rhs_profile_stop(13,v7_rhs_tmark,v7_rhs_ttotal)
+#endif
 
+  return
   end function compute_rhs_bssn
+
+#if ENABLE_V7_RHS_PROFILING
+  subroutine v7_rhs_profile_mark(phase,tmark)
+  implicit none
+  integer, intent(in) :: phase
+  real*8, intent(inout) :: tmark
+  real*8 :: now,v7_rhs_times(27)
+  integer*8 :: v7_rhs_counts(27)
+  real*8 v7_rhs_wtime
+  external v7_rhs_wtime
+  common /v7_rhs_profile_data/ v7_rhs_times,v7_rhs_counts
+  now=v7_rhs_wtime()
+  v7_rhs_times(phase)=v7_rhs_times(phase)+now-tmark
+  v7_rhs_counts(phase)=v7_rhs_counts(phase)+1
+  tmark=now
+  end subroutine v7_rhs_profile_mark
+
+  subroutine v7_rhs_profile_stop(last_phase,tmark,ttotal)
+  implicit none
+  integer, intent(in) :: last_phase
+  real*8, intent(in) :: tmark,ttotal
+  real*8 :: now,v7_rhs_times(27)
+  integer*8 :: v7_rhs_counts(27)
+  real*8 v7_rhs_wtime
+  external v7_rhs_wtime
+  common /v7_rhs_profile_data/ v7_rhs_times,v7_rhs_counts
+  now=v7_rhs_wtime()
+  v7_rhs_times(last_phase)=v7_rhs_times(last_phase)+now-tmark
+  v7_rhs_counts(last_phase)=v7_rhs_counts(last_phase)+1
+  v7_rhs_times(14)=v7_rhs_times(14)+now-ttotal
+  v7_rhs_counts(14)=v7_rhs_counts(14)+1
+  end subroutine v7_rhs_profile_stop
+
+  block data v7_rhs_profile_init
+  implicit none
+  real*8 :: v7_rhs_times(27)
+  integer*8 :: v7_rhs_counts(27)
+  common /v7_rhs_profile_data/ v7_rhs_times,v7_rhs_counts
+  data v7_rhs_times /27*0.d0/
+  data v7_rhs_counts /27*0/
+  end block data v7_rhs_profile_init
+#endif

@@ -4,16 +4,16 @@
 filein  = -I/usr/include/ -I/usr/lib/x86_64-linux-gnu/openmpi/include/ -I/usr/lib/x86_64-linux-gnu/openmpi/lib/ -I/usr/lib/gcc/x86_64-linux-gnu/11/ -I/usr/include/c++/11/ -I/usr/lib/cuda/include
 
 ## LDLIBS  = -L/usr/lib/x86_64-linux-gnu -lmpich -L/usr/lib64 -L/usr/lib/gcc/x86_64-linux-gnu/11 -lgfortran
-LDLIBS  = -L/usr/lib/x86_64-linux-gnu -L/usr/lib64 -L/usr/lib/gcc/x86_64-linux-gnu/11 -lgfortran -L/usr/lib/cuda/lib64 -lcudart -lmpi -lgfortran
+LDLIBS  = -L/usr/lib/x86_64-linux-gnu -L/usr/lib64 -L/usr/lib/gcc/x86_64-linux-gnu/11 -lgfortran -lmpi -lgfortran
 
-CXXAPPFLAGS  = -O3 -Wno-deprecated -Dfortran3 -Dnewc
+CXXAPPFLAGS  = -O3 -march=native -flto -Wno-deprecated -Dfortran3 -Dnewc
 #f90appflags = -O3 -fpp
-f90appflags  = -O3 -x f95-cpp-input
+f90appflags  = -O3 -march=native -flto -finline-functions -x f95-cpp-input
 f90          = gfortran 
 f77          = gfortran 
 CXX          = g++
 CC           = gcc
-CLINKER      = mpic++ 
+CLINKER      = mpic++ -flto
 
 Cu = nvcc
 CUDA_LIB_PATH = -L/usr/lib/cuda/lib64 -I/usr/include -I/usr/lib/cuda/include

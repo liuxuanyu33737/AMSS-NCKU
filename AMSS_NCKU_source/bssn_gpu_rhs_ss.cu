@@ -153,11 +153,11 @@ __global__ void sub_symmetry_bd_ss_partJ(int ord,double * func, double * funcc,d
 
 inline void sub_symmetry_bd_ss(int ord,double * func, double * funcc,double * SoA){
 	sub_symmetry_bd_ss_partF<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	sub_symmetry_bd_ss_partI<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc,SoA[0]);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	sub_symmetry_bd_ss_partJ<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc,SoA[1]);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 }
 
 __global__ void sub_fderivs_shc_part1(double *fx,double *fy,double *fz){
@@ -247,13 +247,13 @@ inline void sub_fderivs_shc(int& sst,double * f,double * fh,double *fx,double *f
 	//cudaMemset(Msh_ gy,0,h_3D_SIZE[0] * sizeof(double));
 	//cudaMemset(Msh_ gz,0,h_3D_SIZE[0] * sizeof(double));
 	sub_symmetry_bd_ss(2,f,fh,SoA1);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			//compare_result_gpu(0,fh,h_3D_SIZE[2]);	
 	sub_fderivs_sh<<<GRID_DIM,BLOCK_DIM>>>(fh,Msh_ gx,Msh_ gy,Msh_ gz);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fderivs_shc_part1<<<GRID_DIM,BLOCK_DIM>>>(fx,fy,fz);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			//compare_result_gpu(1,fx,h_3D_SIZE[0]);
 			//compare_result_gpu(2,fy,h_3D_SIZE[0]);
 			//compare_result_gpu(3,fz,h_3D_SIZE[0]);
@@ -451,17 +451,17 @@ inline void sub_fdderivs_shc(int& sst,double * f,double * fh,
 	
 	//fderivs_sh
 	sub_symmetry_bd_ss(2,f,fh,SoA1);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			//compare_result_gpu(1,fh,h_3D_SIZE[2]);	
 	sub_fderivs_sh<<<GRID_DIM,BLOCK_DIM>>>(fh,Msh_ gx,Msh_ gy,Msh_ gz);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	//fdderivs_sh
 	sub_symmetry_bd_ss(2,f,fh,SoA1);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			//compare_result_gpu(21,fh,h_3D_SIZE[2]);
 	sub_fdderivs_sh<<<GRID_DIM,BLOCK_DIM>>>(fh,Msh_ gxx,Msh_ gxy,Msh_ gxz,Msh_ gyy,Msh_ gyz,Msh_ gzz);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			/*compare_result_gpu(11,Msh_ gx,h_3D_SIZE[0]);
 			compare_result_gpu(12,Msh_ gy,h_3D_SIZE[0]);
 			compare_result_gpu(13,Msh_ gz,h_3D_SIZE[0]);
@@ -472,7 +472,7 @@ inline void sub_fdderivs_shc(int& sst,double * f,double * fh,
 			compare_result_gpu(5,Msh_ gyz,h_3D_SIZE[0]);
 			compare_result_gpu(6,Msh_ gzz,h_3D_SIZE[0]);*/
 	sub_fdderivs_shc_part1<<<GRID_DIM,BLOCK_DIM>>>(fxx,fxy,fxz,fyy,fyz,fzz);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			/*compare_result_gpu(1,fxx,h_3D_SIZE[0]);
 			compare_result_gpu(2,fxy,h_3D_SIZE[0]);
 			compare_result_gpu(3,fxz,h_3D_SIZE[0]);
@@ -496,9 +496,9 @@ __global__ void computeRicci_ss_part1(double * dst)
  inline void computeRicci_ss(int &sst,double * src,double* dst,double * SoA, Meta* meta)
 {
 	sub_fdderivs_shc(sst,src,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,Mh_ fyy,Mh_ fyz,Mh_ fzz,SoA);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	computeRicci_ss_part1<<<GRID_DIM,BLOCK_DIM>>>(dst);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 }
 __global__ void sub_lopsided_ss_part1(double * dst)
@@ -516,9 +516,9 @@ __global__ void sub_lopsided_ss_part1(double * dst)
 inline void sub_lopsided_ss(int& sst,double *src,double* dst,double *SoA)
 {
 		sub_fderivs_shc(sst,src,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,SoA);
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 		sub_lopsided_ss_part1<<<GRID_DIM,BLOCK_DIM>>>(dst);
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 }
 
 __global__ void sub_kodis_sh_part1(double *f,double *fh,double *f_rhs)
@@ -590,11 +590,11 @@ inline void sub_kodis_ss(int &sst,double *f,double *fh,double *f_rhs,double *SoA
 	}
 			//compare_result_gpu(10,f,h_3D_SIZE[0]);
 	sub_symmetry_bd_ss(3,f,fh,SoA1);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			//compare_result_gpu(0,fh,h_3D_SIZE[3]);
 			
 	sub_kodis_sh_part1<<<GRID_DIM,BLOCK_DIM>>>(f,fh,f_rhs);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 			//compare_result_gpu(1,f_rhs,h_3D_SIZE[0]);
 }
 
@@ -2287,13 +2287,13 @@ int gpu_rhs_ss(RHS_SS_PARA)
 
 
 #ifdef TIMING1
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	gettimeofday(&tv2, NULL);
    	cout<<"TIME USED"<<TimeBetween(tv1, tv2)<<endl; 
 #endif	
 	//cout<<"GPU meta data ready.\n";
 	
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 
 
 //-------------get device info-------------------------------------
@@ -2306,7 +2306,7 @@ int gpu_rhs_ss(RHS_SS_PARA)
 	//sub_enforce_ga(matrix_size);
 	//4.1-----compute rhs---------
 	compute_rhs_ss_part1<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 
 	sub_fderivs_shc(sst,Mh_ betax,Mh_ fh,Mh_ betaxx,Mh_ betaxy,Mh_ betaxz,ass);
 	sub_fderivs_shc(sst,Mh_ betay,Mh_ fh,Mh_ betayx,Mh_ betayy,Mh_ betayz,sas);
@@ -2322,7 +2322,7 @@ int gpu_rhs_ss(RHS_SS_PARA)
 	sub_fderivs_shc(sst,Mh_ gyz,Mh_ fh,Mh_ gyzx,Mh_ gyzy,Mh_ gyzz, saa);
 	
 	compute_rhs_ss_part2<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fdderivs_shc(sst,Mh_ betax,Mh_ fh,Mh_ gxxx,Mh_ gxyx,Mh_ gxzx,Mh_ gyyx,Mh_ gyzx,Mh_ gzzx,ass);
 	sub_fdderivs_shc(sst,Mh_ betay,Mh_ fh,Mh_ gxxy,Mh_ gxyy,Mh_ gxzy,Mh_ gyyy,Mh_ gyzy,Mh_ gzzy,sas);
@@ -2332,7 +2332,7 @@ int gpu_rhs_ss(RHS_SS_PARA)
 	sub_fderivs_shc( sst,Mh_ Gamz, Mh_ fh,Mh_ Gamzx, Mh_ Gamzy, Mh_ Gamzz,ssa);
 	
 	compute_rhs_ss_part3<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	computeRicci_ss(sst,Mh_ dxx,Mh_ Rxx,sss, meta);
 	computeRicci_ss(sst,Mh_ dyy,Mh_ Ryy,sss, meta);
@@ -2340,25 +2340,25 @@ int gpu_rhs_ss(RHS_SS_PARA)
 	computeRicci_ss(sst,Mh_ gxy,Mh_ Rxy,aas, meta);
 	computeRicci_ss(sst,Mh_ gxz,Mh_ Rxz,asa, meta);
 	computeRicci_ss(sst,Mh_ gyz,Mh_ Ryz,saa, meta);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	compute_rhs_ss_part4<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fdderivs_shc(sst,Mh_ chi,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,Mh_ fyy,Mh_ fyz,Mh_ fzz,sss);
 	
-	//cudaThreadSynchronize();
+	//cudaDeviceSynchronize();
 	//compare_result_gpu(0,Mh_ chi,h_3D_SIZE[0]);
 	//compare_result_gpu(1,Mh_ chi,h_3D_SIZE[0]);
 	//compare_result_gpu(2,Mh_ fyz,h_3D_SIZE[0]);
 	
 	compute_rhs_ss_part5<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fdderivs_shc(sst,Mh_ Lap,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,Mh_ fyy,Mh_ fyz,Mh_ fzz,sss);
 	
 	compute_rhs_ss_part6<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 #if (GAUGE == 2 || GAUGE == 3 || GAUGE == 4 || GAUGE == 5)
 	sub_fderivs_shc(sst,Mh_ chi,Mh_ fh, Mh_ dtSfx_rhs, Mh_ dtSfy_rhs, Mh_ dtSfz_rhs,sss);
@@ -2423,7 +2423,7 @@ int gpu_rhs_ss(RHS_SS_PARA)
 	}
 	if(co == 0){
 		compute_rhs_ss_part7<<<GRID_DIM,BLOCK_DIM>>>();
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 
 		sub_fderivs_shc(sst,Mh_ Axx,Mh_ fh,Mh_ gxxx,Mh_ gxxy,Mh_ gxxz,sss);
 		sub_fderivs_shc(sst,Mh_ Axy,Mh_ fh,Mh_ gxyx,Mh_ gxyy,Mh_ gxyz,aas);
@@ -2432,7 +2432,7 @@ int gpu_rhs_ss(RHS_SS_PARA)
 		sub_fderivs_shc(sst,Mh_ Ayz,Mh_ fh,Mh_ gyzx,Mh_ gyzy,Mh_ gyzz,saa);
 		sub_fderivs_shc(sst,Mh_ Azz,Mh_ fh,Mh_ gzzx,Mh_ gzzy,Mh_ gzzz,sss);
 		compute_rhs_ss_part8<<<GRID_DIM,BLOCK_DIM>>>();
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 	}
 	
 #if (ABV == 1)
@@ -2512,7 +2512,7 @@ int gpu_rhs_ss(RHS_SS_PARA)
 	//test kodis
 	//sub_kodis_sh(sst,Msh_ drhodx,Mh_ fh2,Msh_ drhody,sss);
 #ifdef TIMING
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	gettimeofday(&tv2, NULL);
    	cout<<"MPI rank is: "<<mpi_rank<<" GPU TIME is"<<TimeBetween(tv1, tv2)<<" (s)."<<endl; 
 #endif

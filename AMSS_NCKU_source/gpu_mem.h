@@ -1,5 +1,6 @@
 #ifndef GPU_MEM_H_
 #define GPU_MEM_H_
+#include <stddef.h>
 #include "macrodef.fh"
 struct Meta
 {
@@ -59,6 +60,23 @@ struct Meta
 #if (GAUGE == 2 || GAUGE == 3 || GAUGE == 4 || GAUGE == 5 || GAUGE == 6 || GAUGE == 7)
 	double *reta;
 #endif
+};
+
+/*
+ * V1a: allocation lifetime only.  Numerical data are still copied into and
+ * out of Meta on every gpu_rhs() call.  Contexts are keyed by shape so they
+ * cannot retain a stale Block pointer across regridding.
+ */
+struct PersistentGpuRhsContext
+{
+	int shape[3];
+	size_t matrix_size;
+	Meta meta;
+	/* V1b RK workspace: 24 variables in each of y0/stage/accumulator. */
+	double *rk_y0;
+	double *rk_stage;
+	double *rk_accum;
+	PersistentGpuRhsContext *next;
 };
 
 //------init constant memory---------

@@ -11,6 +11,32 @@
 #include <cuda_runtime.h>
 using namespace std;
 
+#ifdef GPU_ALLOC_TRACE
+static unsigned long long gpu_alloc_trace_malloc_count = 0;
+static unsigned long long gpu_alloc_trace_free_count = 0;
+static unsigned long long gpu_alloc_trace_allocated_bytes = 0;
+static unsigned long long gpu_alloc_trace_context_create_count = 0;
+static unsigned long long gpu_alloc_trace_context_reuse_count = 0;
+static unsigned long long gpu_alloc_trace_shape_reallocation_count = 0;
+
+static cudaError_t gpu_rhs_trace_malloc(void **ptr, size_t bytes)
+{
+	++gpu_alloc_trace_malloc_count;
+	gpu_alloc_trace_allocated_bytes += bytes;
+	return cudaMalloc(ptr, bytes);
+}
+
+static cudaError_t gpu_rhs_trace_free(void *ptr)
+{
+	if (ptr)
+		++gpu_alloc_trace_free_count;
+	return cudaFree(ptr);
+}
+
+#define cudaMalloc gpu_rhs_trace_malloc
+#define cudaFree gpu_rhs_trace_free
+#endif
+
 //includes, bssn
 #include "gpu_mem.h"
 #include "bssn_gpu.h"
@@ -83,7 +109,7 @@ inline void sub_enforce_ga(int matrix_size){
 	double * trA = M_ chin1;
 	enforce_ga<<<GRID_DIM,BLOCK_DIM>>>(trA);
 	cudaMemset(trA,0,matrix_size * sizeof(double));
-	cudaThreadSynchronize(); 
+	cudaDeviceSynchronize();
 	
 	//cudaMemset(Mh_ gupxx,0,matrix_size * sizeof(double));
 	//trA gxx,gyy,gzz gupxx,gupxy,gupxz,gupyy,gupyz,gupzz
@@ -273,13 +299,13 @@ __global__ void sub_symmetry_bd_partK(int ord,double * func, double * funcc,doub
 #endif //ifdef Vertex
 inline void sub_symmetry_bd(int ord,double * func, double * funcc,double * SoA){
 	sub_symmetry_bd_partF<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	sub_symmetry_bd_partI<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc,SoA[0]);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	sub_symmetry_bd_partJ<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc,SoA[1]);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	sub_symmetry_bd_partK<<<GRID_DIM,BLOCK_DIM>>>(ord,func,funcc,SoA[2]);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 }
 
 
@@ -378,9 +404,9 @@ inline void sub_fdderivs(double * f,double *fh,double *fxx,double *fxy,double *f
 	cudaMemset(fyy,0,_3D_SIZE[0] * sizeof(double));
 	cudaMemset(fyz,0,_3D_SIZE[0] * sizeof(double));
 	cudaMemset(fzz,0,_3D_SIZE[0] * sizeof(double));
-	cudaThreadSynchronize(); 
+	cudaDeviceSynchronize();
 	sub_fdderivs_part1<<<GRID_DIM,BLOCK_DIM>>>(f,fh,fxx,fxy,fxz,fyy,fyz,fzz);
-	cudaThreadSynchronize(); 
+	cudaDeviceSynchronize();
 }
 
 __global__ void sub_fderivs_part1(double * f,double * fh,double *fx,double *fy,double *fz  )
@@ -445,9 +471,9 @@ inline void sub_fderivs(double * f,double * fh,double *fx,double *fy,double *fz,
 	cudaMemset(fy,0,_3D_SIZE[0] * sizeof(double));
 	cudaMemset(fz,0,_3D_SIZE[0] * sizeof(double));
 	
-	cudaThreadSynchronize(); 
+	cudaDeviceSynchronize();
 	sub_fderivs_part1<<<GRID_DIM,BLOCK_DIM>>>(f,fh,fx,fy,fz);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 }
 
 __global__ void computeRicci_part1(double * dst)
@@ -465,9 +491,9 @@ __global__ void computeRicci_part1(double * dst)
  inline void computeRicci(double * src,double* dst,double * SoA, Meta* meta)
 {
 	sub_fdderivs(src,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,Mh_ fyy,Mh_ fyz,Mh_ fzz,SoA);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	computeRicci_part1<<<GRID_DIM,BLOCK_DIM>>>(dst);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 }/*Exception*/
 
@@ -524,9 +550,9 @@ __global__ void sub_kodis_part1(double *f,double *fh,double *f_rhs)
 inline void sub_kodis(double *f,double *fh,double *f_rhs,double *SoA)
 {
 	sub_symmetry_bd(3,f,fh,SoA);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	sub_kodis_part1<<<GRID_DIM,BLOCK_DIM>>>(f,fh,f_rhs);
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 }
  
 __global__ void  sub_lopsided_part1(double *f,double* fh,double *f_rhs,double *Sfx,double *Sfy,double *Sfz)
@@ -617,9 +643,9 @@ __global__ void  sub_lopsided_part1(double *f,double* fh,double *f_rhs,double *S
 
 inline void  sub_lopsided(double *f,double*fh,double *f_rhs,double *Sfx,double *Sfy,double *Sfz,double *SoA){
 	sub_symmetry_bd(3,f,fh,SoA);
-	cudaThreadSynchronize(); 
+	cudaDeviceSynchronize();
 	sub_lopsided_part1<<<GRID_DIM,BLOCK_DIM>>>(f,fh,f_rhs,Sfx,Sfy,Sfz);
-	cudaThreadSynchronize(); 
+	cudaDeviceSynchronize();
 }
 
 __global__ void compute_rhs_bssn_part1() 
@@ -1976,6 +2002,179 @@ void destroy_meta(Meta *meta)
 	}*/
 }
 
+static PersistentGpuRhsContext *gpu_rhs_contexts = 0;
+static bool gpu_rhs_context_exit_hook_registered = false;
+
+__global__ static void rungekutta4_kernel(size_t n, double dT,
+                                           const double *f0, double *f1,
+                                           double *f_rhs, int RK4)
+{
+	size_t i = (size_t)blockIdx.x * blockDim.x + threadIdx.x;
+	if (i >= n)
+		return;
+	if (RK4 == 0)
+		f1[i] = f0[i] + 0.5 * dT * f_rhs[i];
+	else if (RK4 == 1)
+	{
+		f_rhs[i] = f_rhs[i] + 2.0 * f1[i];
+		f1[i] = f0[i] + 0.5 * dT * f1[i];
+	}
+	else if (RK4 == 2)
+	{
+		f_rhs[i] = f_rhs[i] + 2.0 * f1[i];
+		f1[i] = f0[i] + dT * f1[i];
+	}
+	else if (RK4 == 3)
+		f1[i] = f0[i] + (1.0 / 6.0) * dT * (f1[i] + f_rhs[i]);
+}
+
+static PersistentGpuRhsContext *gpu_rhs_context_find(const int *shape)
+{
+	PersistentGpuRhsContext *context = gpu_rhs_contexts;
+	while (context)
+	{
+		if (context->shape[0] == shape[0] && context->shape[1] == shape[1] &&
+		    context->shape[2] == shape[2])
+			return context;
+		context = context->next;
+	}
+	return 0;
+}
+
+static Meta *gpu_rhs_context_get(const int *shape, bool *created)
+{
+	PersistentGpuRhsContext *context = gpu_rhs_contexts;
+	while (context)
+	{
+		if (context->shape[0] == shape[0] &&
+		    context->shape[1] == shape[1] &&
+		    context->shape[2] == shape[2])
+		{
+			*created = false;
+#ifdef GPU_ALLOC_TRACE
+			++gpu_alloc_trace_context_reuse_count;
+#endif
+			return &context->meta;
+		}
+		context = context->next;
+	}
+
+	context = (PersistentGpuRhsContext *)calloc(1, sizeof(PersistentGpuRhsContext));
+	if (!context)
+	{
+		cerr << "Unable to allocate PersistentGpuRhsContext" << endl;
+		return 0;
+	}
+	context->shape[0] = shape[0];
+	context->shape[1] = shape[1];
+	context->shape[2] = shape[2];
+	context->matrix_size = (size_t)shape[0] * shape[1] * shape[2];
+	const size_t rk_bank_bytes = 24 * context->matrix_size * sizeof(double);
+	if (cudaMalloc((void **)&context->rk_y0, rk_bank_bytes) != cudaSuccess ||
+	    cudaMalloc((void **)&context->rk_stage, rk_bank_bytes) != cudaSuccess ||
+	    cudaMalloc((void **)&context->rk_accum, rk_bank_bytes) != cudaSuccess)
+	{
+		cudaFree(context->rk_y0);
+		cudaFree(context->rk_stage);
+		cudaFree(context->rk_accum);
+		free(context);
+		cerr << "Unable to allocate V1b RK state banks" << endl;
+		return 0;
+	}
+	context->next = gpu_rhs_contexts;
+	gpu_rhs_contexts = context;
+	*created = true;
+
+#ifdef GPU_ALLOC_TRACE
+	++gpu_alloc_trace_context_create_count;
+	if (context->next)
+		++gpu_alloc_trace_shape_reallocation_count;
+#endif
+	if (!gpu_rhs_context_exit_hook_registered)
+	{
+		atexit(gpu_rhs_context_destroy_all);
+		gpu_rhs_context_exit_hook_registered = true;
+	}
+	return &context->meta;
+}
+
+int gpu_rungekutta4_rout(int *ex, double dT, double *f0, double *f1,
+                         double *f_rhs, int RK4, int variable_index)
+{
+	if (RK4 < 0 || RK4 > 3 || variable_index < 0 || variable_index >= 24)
+		return 1;
+	bool created = false;
+	PersistentGpuRhsContext *context = gpu_rhs_context_find(ex);
+	if (!context)
+	{
+		if (!gpu_rhs_context_get(ex, &created))
+			return 1;
+		context = gpu_rhs_context_find(ex);
+	}
+	const size_t n = context->matrix_size;
+	const size_t bytes = n * sizeof(double);
+	double *d_f0 = context->rk_y0 + (size_t)variable_index * n;
+	double *d_f1 = context->rk_stage + (size_t)variable_index * n;
+	double *d_rhs = context->rk_accum + (size_t)variable_index * n;
+	if (cudaMemcpy(d_f0, f0, bytes, cudaMemcpyHostToDevice) != cudaSuccess ||
+	    cudaMemcpy(d_f1, f1, bytes, cudaMemcpyHostToDevice) != cudaSuccess ||
+	    cudaMemcpy(d_rhs, f_rhs, bytes, cudaMemcpyHostToDevice) != cudaSuccess)
+		return 1;
+	const unsigned int threads = 256;
+	const unsigned int blocks = (unsigned int)((n + threads - 1) / threads);
+	rungekutta4_kernel<<<blocks, threads>>>(n, dT, d_f0, d_f1, d_rhs, RK4);
+	if (cudaGetLastError() != cudaSuccess ||
+	    cudaMemcpy(f1, d_f1, bytes, cudaMemcpyDeviceToHost) != cudaSuccess)
+		return 1;
+	if (RK4 == 1 || RK4 == 2)
+		if (cudaMemcpy(f_rhs, d_rhs, bytes, cudaMemcpyDeviceToHost) != cudaSuccess)
+			return 1;
+	return 0;
+}
+
+void gpu_rhs_context_destroy(int nx, int ny, int nz)
+{
+	PersistentGpuRhsContext **link = &gpu_rhs_contexts;
+	while (*link)
+	{
+		PersistentGpuRhsContext *context = *link;
+		if (context->shape[0] == nx && context->shape[1] == ny && context->shape[2] == nz)
+		{
+			*link = context->next;
+			destroy_meta(&context->meta);
+			cudaFree(context->rk_y0);
+			cudaFree(context->rk_stage);
+			cudaFree(context->rk_accum);
+			free(context);
+			return;
+		}
+		link = &context->next;
+	}
+}
+
+void gpu_rhs_context_destroy_all(void)
+{
+	while (gpu_rhs_contexts)
+	{
+		PersistentGpuRhsContext *context = gpu_rhs_contexts;
+		gpu_rhs_contexts = context->next;
+		destroy_meta(&context->meta);
+		cudaFree(context->rk_y0);
+		cudaFree(context->rk_stage);
+		cudaFree(context->rk_accum);
+		free(context);
+	}
+#ifdef GPU_ALLOC_TRACE
+	cerr << "GPU_ALLOC_TRACE malloc=" << gpu_alloc_trace_malloc_count
+	     << " free=" << gpu_alloc_trace_free_count
+	     << " allocated_bytes=" << gpu_alloc_trace_allocated_bytes
+	     << " context_create=" << gpu_alloc_trace_context_create_count
+	     << " context_reuse=" << gpu_alloc_trace_context_reuse_count
+	     << " shape_reallocation=" << gpu_alloc_trace_shape_reallocation_count
+	     << endl;
+#endif
+}
+
 /*void fetch_data(Meta *meta, int matrix_size)
 {
 	
@@ -2033,7 +2232,15 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	//int dim = 3;
 	int matrix_size = ex[0] * ex[1] * ex[2];
 	Meta met;
-	Meta * meta = &met;
+	Meta *meta = &met;
+	bool allocate_meta = true;
+#if GPU_PERSISTENT_RHS_CONTEXT
+	meta = gpu_rhs_context_get(ex, &allocate_meta);
+	if (!meta)
+		return 1;
+#else
+	memset(meta, 0, sizeof(Meta));
+#endif
 	
 	/*
 	//#1--------------------init_gpu_meta(meta,matrix_size)---------------------------
@@ -2205,8 +2412,10 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	CUDA_SAFE_CALL(cudaMalloc((void**)&(Mh_ fh), (ex[0]+2)*(ex[1]+2)*(ex[2]+2) * sizeof(double)));
 	CUDA_SAFE_CALL(cudaMalloc((void**)&(Mh_ fh2), (ex[0]+3)*(ex[1]+3)*(ex[2]+3) * sizeof(double)));
 	*/
-	
+
 	//#1--------------------init_gpu_meta(meta,matrix_size)---------------------------
+	if (allocate_meta)
+	{
 
 	//1.1 inout
 	cudaMalloc((void**)&(Mh_ X), ex[0] * sizeof(double));
@@ -2389,7 +2598,8 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
   		cudaMalloc((void**)&(Mh_ reta), matrix_size * sizeof(double));
 
 	#endif
-	  
+	}
+
 //2 ----------------Copy Data to Device------------------
 	cudaMemcpy(Mh_ X, X, ex[0] * sizeof(double), cudaMemcpyHostToDevice);
 	cudaMemcpy(Mh_ Y, Y, ex[1] * sizeof(double), cudaMemcpyHostToDevice);
@@ -2656,13 +2866,13 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 
 
 #ifdef TIMING1
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	gettimeofday(&tv2, NULL);
    	cout<<"TIME USED"<<TimeBetween(tv1, tv2)<<endl; 
 #endif	
 	//cout<<"GPU meta data ready.\n";
 	
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 
 //--------------test constant memory address & value--------------
 /*	double rank = mpi_rank;
@@ -2685,7 +2895,7 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	//sub_enforce_ga(matrix_size);
 	//4.1-----compute rhs---------
 	compute_rhs_bssn_part1<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 
 	sub_fderivs(Mh_ betax,Mh_ fh,Mh_ betaxx,Mh_ betaxy,Mh_ betaxz,ass);
 	sub_fderivs(Mh_ betay,Mh_ fh,Mh_ betayx,Mh_ betayy,Mh_ betayz,sas);
@@ -2701,7 +2911,7 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	sub_fderivs(Mh_ gyz,Mh_ fh,Mh_ gyzx,Mh_ gyzy,Mh_ gyzz, saa);
   	
   	compute_rhs_bssn_part2<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fdderivs(Mh_ betax,Mh_ fh,Mh_ gxxx,Mh_ gxyx,Mh_ gxzx,Mh_ gyyx,Mh_ gyzx,Mh_ gzzx,ass);
 	sub_fdderivs(Mh_ betay,Mh_ fh,Mh_ gxxy,Mh_ gxyy,Mh_ gxzy,Mh_ gyyy,Mh_ gyzy,Mh_ gzzy,sas);
@@ -2711,7 +2921,7 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	sub_fderivs( Mh_ Gamz, Mh_ fh,Mh_ Gamzx, Mh_ Gamzy, Mh_ Gamzz,ssa);
 	
 	compute_rhs_bssn_part3<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	computeRicci(Mh_ dxx,Mh_ Rxx,sss, meta);
 	computeRicci(Mh_ dyy,Mh_ Ryy,sss, meta);
@@ -2720,20 +2930,20 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	computeRicci(Mh_ gxz,Mh_ Rxz,asa, meta);
 	computeRicci(Mh_ gyz,Mh_ Ryz,saa, meta);
 	
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	compute_rhs_bssn_part4<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fdderivs(Mh_ chi,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,Mh_ fyy,Mh_ fyz,Mh_ fzz,sss);
 	
 	compute_rhs_bssn_part5<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 	sub_fdderivs(Mh_ Lap,Mh_ fh,Mh_ fxx,Mh_ fxy,Mh_ fxz,Mh_ fyy,Mh_ fyz,Mh_ fzz,sss);
 	
 	compute_rhs_bssn_part6<<<GRID_DIM,BLOCK_DIM>>>();
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	
 #if (GAUGE == 2 || GAUGE == 3 || GAUGE == 4 || GAUGE == 5)
 	sub_fderivs(Mh_ chi,Mh_ fh, Mh_ dtSfx_rhs, Mh_ dtSfy_rhs, Mh_ dtSfz_rhs,sss);
@@ -2805,7 +3015,7 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 	
 	if(co == 0){
 		compute_rhs_bssn_part7<<<GRID_DIM,BLOCK_DIM>>>();
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 
 		sub_fderivs(Mh_ Axx,Mh_ fh,Mh_ gxxx,Mh_ gxxy,Mh_ gxxz,sss);
 		sub_fderivs(Mh_ Axy,Mh_ fh,Mh_ gxyx,Mh_ gxyy,Mh_ gxyz,aas);
@@ -2814,7 +3024,7 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 		sub_fderivs(Mh_ Ayz,Mh_ fh,Mh_ gyzx,Mh_ gyzy,Mh_ gyzz,saa);
 		sub_fderivs(Mh_ Azz,Mh_ fh,Mh_ gzzx,Mh_ gzzy,Mh_ gzzz,sss);
 		compute_rhs_bssn_part8<<<GRID_DIM,BLOCK_DIM>>>();
-		cudaThreadSynchronize();
+		cudaDeviceSynchronize();
 	}
 
 #if (ABV == 1)
@@ -2895,13 +3105,15 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,double *X, double *Y,
 //-------------------FOR GPU TEST----------------------
 //-----------------------------------------------------
 #ifdef TIMING
-	cudaThreadSynchronize();
+	cudaDeviceSynchronize();
 	gettimeofday(&tv2, NULL);
    	cout<<"MPI rank is: "<<mpi_rank<<" GPU TIME is"<<TimeBetween(tv1, tv2)<<" (s)."<<endl; 
 #endif
 
 
+#if !GPU_PERSISTENT_RHS_CONTEXT
 	destroy_meta(meta);
+#endif
 
 	
 	return 0;//TODO return

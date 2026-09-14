@@ -24,6 +24,59 @@ using namespace std;
 
 #include "misc.h"
 #include "macrodef.h"
+#include "v7_rhs_profile.h"
+
+#if ENABLE_V7_RHS_PROFILING
+extern "C" {
+struct V7RhsProfileData {
+      double times[27];
+      long long counts[27];
+};
+extern V7RhsProfileData v7_rhs_profile_data_;
+}
+
+extern "C" double v7_rhs_wtime_()
+{
+      return MPI_Wtime();
+}
+
+extern "C" void v7_rhs_profile_report_()
+{
+      static const char *names[27] = {
+            "sanity_prep", "early_derivatives", "inverse_metric",
+            "christoffel_gamma", "shift_second_gamma", "connection_build",
+            "ricci_base", "chi_ricci", "lapse_Aij_trK",
+            "lopsided_advection", "kodis_dissipation", "constraints",
+            "final_misc", "rhs_total",
+            "early.shift_first", "early.chi_derivative", "early.metric_first",
+            "shift.fdderivs_fusion", "shift.contracted_Gamma", "shift.Gam_derivatives", "shift.Gamma_RHS_update",
+            "lapse.second_derivatives", "lapse.Hessian_source", "lapse.Aij_RHS", "lapse.trK_RHS",
+            "kodis.symmetry_prep", "kodis.stencil_RHS_accumulation"};
+      double sum_times[27], max_times[27];
+      long long sum_counts[27];
+      int rank;
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Reduce(v7_rhs_profile_data_.times, sum_times, 27, MPI_DOUBLE,
+                 MPI_SUM, 0, MPI_COMM_WORLD);
+      MPI_Reduce(v7_rhs_profile_data_.times, max_times, 27, MPI_DOUBLE,
+                 MPI_MAX, 0, MPI_COMM_WORLD);
+      MPI_Reduce(v7_rhs_profile_data_.counts, sum_counts, 27, MPI_LONG_LONG,
+                 MPI_SUM, 0, MPI_COMM_WORLD);
+      if (rank == 0)
+      {
+            cout << "===== V7-14 RHS hierarchical profile =====" << endl;
+            cout << "phase count sum_time avg_time maxrank_time pct_of_rhs" << endl;
+            for (int p = 0; p < 27; ++p)
+            {
+                  const double avg = sum_counts[p] ? sum_times[p] / sum_counts[p] : 0.0;
+                  const double pct = sum_times[13] ? 100.0 * sum_times[p] / sum_times[13] : 0.0;
+                  cout << names[p] << " " << sum_counts[p] << " " << sum_times[p]
+                       << " " << avg << " " << max_times[p] << " " << pct << endl;
+            }
+            cout << "===== end V7-14 RHS hierarchical profile =====" << endl;
+      }
+}
+#endif
 
 #ifndef ABEtype
 #error "not define ABEtype"
@@ -499,6 +552,9 @@ int main(int argc, char *argv[])
             cout << endl;
       }
 
+#if ENABLE_V7_RHS_PROFILING
+      v7_rhs_profile_report_();
+#endif
       MPI_Finalize();
 
       exit(0);

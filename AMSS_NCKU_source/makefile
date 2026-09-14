@@ -24,13 +24,17 @@ C++FILES = ABE.o Ansorg.o Block.o misc.o monitor.o Parallel.o MPatch.o var.o\
            Parallel_bam.o scalar_class.o transpbh.o NullShellPatch2.o\
 	   NullShellPatch2_Evo.o writefile_f.o
 	   
-C++FILES_GPU = ABE.o Ansorg.o Block.o misc.o monitor.o Parallel.o MPatch.o var.o\
+C++FILES_GPU = ABE_gpu.o Ansorg.o Block.o misc.o monitor.o Parallel.o MPatch.o var.o\
            cgh.o surface_integral.o ShellPatch.o\
-	   bssnEScalar_class.o perf.o Z4c_class.o NullShellPatch.o\
-	   bssnEM_class.o cpbc_util.o z4c_rhs_point.o checkpoint.o\
+	   bssnEScalar_class_gpu.o perf.o Z4c_class_gpu.o NullShellPatch.o\
+	   bssnEM_class_gpu.o cpbc_util.o z4c_rhs_point.o checkpoint.o\
            Parallel_bam.o scalar_class.o transpbh.o NullShellPatch2.o\
 	   NullShellPatch2_Evo.o \
 	   bssn_gpu_class.o bssn_step_gpu.o bssn_macro.o writefile_f.o
+
+GPU_VARIANT_OBJECTS = ABE_gpu.o bssnEScalar_class_gpu.o Z4c_class_gpu.o \
+	   bssnEM_class_gpu.o BH_diagnostics_gpu.o setup_gpu.o \
+	   initial_guess_gpu.o IntPnts0_gpu.o
 
 F90FILES = enforce_algebra.o fmisc.o initial_puncture.o prolongrestrict.o\
 	   prolongrestrict_cell.o prolongrestrict_vertex.o\
@@ -52,9 +56,17 @@ tgrid.o fd_grid.o ghost_zone.o array.o round.o norm.o fuzzy.o error_exit.o miscf
 linear_map.o cpm_map.o BH_diagnostics.o setup.o horizon_sequence.o find_horizons.o \
 initial_guess.o Newton.o Jacobian.o ilucg.o IntPnts0.o IntPnts.o
 
+AHFDOBJS_GPU = expansion.o expansion_Jacobian.o patch.o coords.o patch_info.o patch_interp.o patch_system.o \
+tgrid.o fd_grid.o ghost_zone.o array.o round.o norm.o fuzzy.o error_exit.o miscfp.o \
+linear_map.o cpm_map.o BH_diagnostics_gpu.o setup_gpu.o horizon_sequence.o find_horizons.o \
+initial_guess_gpu.o Newton.o Jacobian.o ilucg.o IntPnts0_gpu.o IntPnts.o
+
 TwoPunctureFILES = TwoPunctureABE.o TwoPunctures.o 
 
 CUDAFILES = bssn_gpu.o bssn_gpu_rhs_ss.o
+
+CUDA_HOME ?= /usr/local/cuda
+CUDA_LDLIBS = -L$(CUDA_HOME)/lib64 -lcudart
 
 # file dependences
 $(C++FILES) $(C++FILESGPU) $(F90FILES) $(AHFDOBJS) $(CUDAFILES): macrodef.fh
@@ -66,8 +78,12 @@ $(C++FILES): Block.h enforce_algebra.h fmisc.h initial_puncture.h macrodef.h\
              fadmquantites_bssn.h cpbc.h getnp4.h initial_null.h NullEvol.h\
 	     NullShellPatch.h initial_maxwell.h bssnEM_class.h getnpem2.h\
 	     empart.h NullNews.h kodiss.h Parallel_bam.h ricci_gamma.h\
-             initial_null2.h NullShellPatch2.h 
-             
+             initial_null2.h NullShellPatch2.h
+
+# abe_wtime_prof.h is included by bssn_class.C only
+bssn_class.o: abe_wtime_prof.h
+bssn_class.o surface_integral.o MPatch.o: v7_wave_profile.h
+ABE.o bssn_rhs.o: v7_rhs_profile.h
 $(C++FILES_GPU): Block.h enforce_algebra.h fmisc.h initial_puncture.h macrodef.h\
 	     misc.h monitor.h MyList.h Parallel.h MPatch.h prolongrestrict.h\
 	     rungekutta4_rout.h var.h bssn_rhs.h sommerfeld_rout.h\
@@ -86,17 +102,23 @@ TwoPunctureFILES: TwoPunctures.h
 
 $(CUDAFILES): bssn_gpu.h gpu_mem.h gpu_rhsSS_mem.h
 
+$(GPU_VARIANT_OBJECTS): %_gpu.o: %.C
+	${CXX} $(CXXAPPFLAGS) -DUSE_GPU -c $< $(filein) -o $@
+
 misc.o : zbesh.o
 
 # projects
 ABE: $(C++FILES) $(F90FILES) $(F77FILES) $(AHFDOBJS) 
 	$(CLINKER) $(CXXAPPFLAGS) -o $@ $(C++FILES) $(F90FILES) $(F77FILES) $(AHFDOBJS) $(LDLIBS)
 	
-ABEGPU: $(C++FILES_GPU) $(F90FILES) $(F77FILES) $(AHFDOBJS) $(CUDAFILES)
-	$(CLINKER) $(CXXAPPFLAGS) -o $@ $(C++FILES_GPU) $(F90FILES) $(F77FILES) $(AHFDOBJS) $(CUDAFILES) $(LDLIBS)
+ABEGPU: $(C++FILES_GPU) $(F90FILES) $(F77FILES) $(AHFDOBJS_GPU) $(CUDAFILES)
+	$(CLINKER) $(CXXAPPFLAGS) -o $@ $(C++FILES_GPU) $(F90FILES) $(F77FILES) $(AHFDOBJS_GPU) $(CUDAFILES) $(LDLIBS) $(CUDA_LDLIBS)
 
 TwoPunctureABE: $(TwoPunctureFILES)
 	$(CLINKER) $(CXXAPPFLAGS) -o $@ $(TwoPunctureFILES) $(LDLIBS)
 
 clean:
 	rm *.o ABE ABEGPU TwoPunctureABE make.log -f
+
+# V7-14 profiling-only header dependencies.
+kodiss.o: v7_rhs_profile.h

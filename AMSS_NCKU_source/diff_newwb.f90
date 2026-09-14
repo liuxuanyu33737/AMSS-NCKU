@@ -1186,9 +1186,33 @@
   fy = ZEO
   fz = ZEO
 
+!$omp parallel do collapse(3) default(shared) private(i,j,k)
+  do k=3,ex(3)-2
+  do j=3,ex(2)-2
+  do i=3,ex(1)-2
+
+      fx(i,j,k)=d12dx*(fh(i-2,j,k)-8.d0*fh(i-1,j,k) &
+                      +8.d0*fh(i+1,j,k)-fh(i+2,j,k))
+
+      fy(i,j,k)=d12dy*(fh(i,j-2,k)-8.d0*fh(i,j-1,k) &
+                      +8.d0*fh(i,j+1,k)-fh(i,j+2,k))
+
+      fz(i,j,k)=d12dz*(fh(i,j,k-2)-8.d0*fh(i,j,k-1) &
+                      +8.d0*fh(i,j,k+1)-fh(i,j,k+2))
+
+  enddo
+  enddo
+  enddo
+!$omp end parallel do
+
   do k=1,ex(3)
   do j=1,ex(2)
   do i=1,ex(1)
+
+    if(i>=3 .and. i<=ex(1)-2 .and. &
+       j>=3 .and. j<=ex(2)-2 .and. &
+       k>=3 .and. k<=ex(3)-2) cycle
+
 ! x direction   
         if(i+2 <= imax .and. i-2 >= imin)then
 !

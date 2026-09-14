@@ -421,6 +421,7 @@
   return
 
   end subroutine fdderivs
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! only for compute_ricci.f90 usage
 !-----------------------------------------------------------------------------
@@ -943,7 +944,14 @@
 !
 !-----------------------------------------------------------------------------------------------------------------
 
+#ifndef VERIFY_V7_FDERIVS_ZERO_INIT
+#define VERIFY_V7_FDERIVS_ZERO_INIT 0
+#endif
+
   subroutine fderivs(ex,f,fx,fy,fz,X,Y,Z,SYM1,SYM2,SYM3,symmetry,onoff)
+#if defined(Cell) && VERIFY_V7_FDERIVS_ZERO_INIT
+  use, intrinsic :: ieee_arithmetic, only: ieee_value, ieee_quiet_nan, ieee_is_finite
+#endif
   implicit none
 
   integer,                               intent(in ):: ex(1:3),symmetry,onoff
@@ -964,6 +972,13 @@
   real*8,  parameter :: TWO=2.d0,EIT=8.d0
   real*8,  parameter ::  F9=9.d0,F45=4.5d1,F12=1.2d1
 
+#if defined(Cell) && VERIFY_V7_FDERIVS_ZERO_INIT
+  real*8 :: v7_refx,v7_refy,v7_refz,v7_old,v7_new,v7_abs,v7_rel
+  real*8 :: v7_max_abs,v7_max_rel,v7_poison
+  integer :: v7_direction
+  integer*8 :: v7_mismatch
+#endif
+
   dX = X(2)-X(1)
   dY = Y(2)-Y(1)
   dZ = Z(2)-Z(1)
@@ -983,7 +998,11 @@
   SoA(2) = SYM2
   SoA(3) = SYM3
 
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,f,fh,SoA)
+#else
   call symmetry_bd(2,ex,f,fh,SoA)
+#endif
 
   d12dx = ONE/F12/dX
   d12dy = ONE/F12/dY
@@ -993,14 +1012,73 @@
   d2dy = ONE/TWO/dY
   d2dz = ONE/TWO/dZ
 
+#if defined(Cell) && VERIFY_V7_FDERIVS_ZERO_INIT
+  ! Poison existing outputs to expose any missed initialization.
+  v7_poison=ieee_value(ONE,ieee_quiet_nan)
+  fx=v7_poison
+  fy=v7_poison
+  fz=v7_poison
+#endif
+#ifdef Cell
+  ! V7-13-1: both active stencil branches write all three outputs together.
+  ! Their union is [max(1,imin+1):ex(1)-1] x the analogous y/z ranges.
+  ! Only its complement needs zero initialization: the upper faces, plus
+  ! lower faces whose direction has no reflected support (minimum == 1).
+  ! Face intersections deliberately receive the same +0 more than once.
+  fx(ex(1),:,:) = ZEO
+  fy(ex(1),:,:) = ZEO
+  fz(ex(1),:,:) = ZEO
+  fx(:,ex(2),:) = ZEO
+  fy(:,ex(2),:) = ZEO
+  fz(:,ex(2),:) = ZEO
+  fx(:,:,ex(3)) = ZEO
+  fy(:,:,ex(3)) = ZEO
+  fz(:,:,ex(3)) = ZEO
+  if (imin == 1) then
+    fx(1,:,:) = ZEO
+    fy(1,:,:) = ZEO
+    fz(1,:,:) = ZEO
+  endif
+  if (jmin == 1) then
+    fx(:,1,:) = ZEO
+    fy(:,1,:) = ZEO
+    fz(:,1,:) = ZEO
+  endif
+  if (kmin == 1) then
+    fx(:,:,1) = ZEO
+    fy(:,:,1) = ZEO
+    fz(:,:,1) = ZEO
+  endif
+#else
   fx = ZEO
   fy = ZEO
   fz = ZEO
+#endif
 
+! The regular interior always uses the fourth-order centered stencil.
+! Compute it separately to remove the repeated bounds tests from the hot loop.
+  do k=3,ex(3)-2
+  do j=3,ex(2)-2
+  do i=3,ex(1)-2
+      fx(i,j,k)=d12dx*(fh(i-2,j,k)-EIT*fh(i-1,j,k) &
+                      +EIT*fh(i+1,j,k)-fh(i+2,j,k))
+      fy(i,j,k)=d12dy*(fh(i,j-2,k)-EIT*fh(i,j-1,k) &
+                      +EIT*fh(i,j+1,k)-fh(i,j+2,k))
+      fz(i,j,k)=d12dz*(fh(i,j,k-2)-EIT*fh(i,j,k-1) &
+                      +EIT*fh(i,j,k+1)-fh(i,j,k+2))
+  enddo
+  enddo
+  enddo
+
+! Retain the original boundary selection and fallback stencils.
   do k=1,ex(3)-1
   do j=1,ex(2)-1
   do i=1,ex(1)-1
-#if 0  
+
+    if(i>=3 .and. i<=ex(1)-2 .and. &
+       j>=3 .and. j<=ex(2)-2 .and. &
+       k>=3 .and. k<=ex(3)-2) cycle
+#if 0
 ! x direction   
         if(i+2 <= imax .and. i-2 >= imin)then
 !
@@ -1098,6 +1176,67 @@
   enddo
   enddo
   enddo
+
+#if defined(Cell) && VERIFY_V7_FDERIVS_ZERO_INIT
+  ! Stream the old full-zero initialization + original stencil result one
+  ! point at a time: no full-grid reference or coverage arrays are needed.
+  ! Unlike the optimized face selection, this oracle starts every point at 0.
+  v7_max_abs=ZEO
+  v7_max_rel=ZEO
+  v7_mismatch=0
+  do k=1,ex(3)
+  do j=1,ex(2)
+  do i=1,ex(1)
+    v7_refx=ZEO
+    v7_refy=ZEO
+    v7_refz=ZEO
+    if (i<=ex(1)-1 .and. j<=ex(2)-1 .and. k<=ex(3)-1) then
+      if(i+2 <= imax .and. i-2 >= imin .and. &
+         j+2 <= jmax .and. j-2 >= jmin .and. &
+         k+2 <= kmax .and. k-2 >= kmin) then
+        v7_refx=d12dx*(fh(i-2,j,k)-EIT*fh(i-1,j,k)+EIT*fh(i+1,j,k)-fh(i+2,j,k))
+        v7_refy=d12dy*(fh(i,j-2,k)-EIT*fh(i,j-1,k)+EIT*fh(i,j+1,k)-fh(i,j+2,k))
+        v7_refz=d12dz*(fh(i,j,k-2)-EIT*fh(i,j,k-1)+EIT*fh(i,j,k+1)-fh(i,j,k+2))
+      elseif(i+1 <= imax .and. i-1 >= imin .and. &
+             j+1 <= jmax .and. j-1 >= jmin .and. &
+             k+1 <= kmax .and. k-1 >= kmin) then
+        v7_refx=d2dx*(-fh(i-1,j,k)+fh(i+1,j,k))
+        v7_refy=d2dy*(-fh(i,j-1,k)+fh(i,j+1,k))
+        v7_refz=d2dz*(-fh(i,j,k-1)+fh(i,j,k+1))
+      endif
+    endif
+    do v7_direction=1,3
+      select case(v7_direction)
+      case(1)
+        v7_old=v7_refx
+        v7_new=fx(i,j,k)
+      case(2)
+        v7_old=v7_refy
+        v7_new=fy(i,j,k)
+      case(3)
+        v7_old=v7_refz
+        v7_new=fz(i,j,k)
+      end select
+      if (transfer(v7_old,0_8) /= transfer(v7_new,0_8)) then
+        v7_mismatch=v7_mismatch+1
+        if (ieee_is_finite(v7_old) .and. ieee_is_finite(v7_new)) then
+          v7_abs=abs(v7_new-v7_old)
+          v7_rel=v7_abs/max(abs(v7_old),1.d-300)
+        else
+          v7_abs=huge(ONE)
+          v7_rel=huge(ONE)
+        endif
+        v7_max_abs=max(v7_max_abs,v7_abs)
+        v7_max_rel=max(v7_max_rel,v7_rel)
+      endif
+    enddo
+  enddo
+  enddo
+  enddo
+  write(*,'(A,3I6,A,I3,A,3F5.1,A,ES24.16,A,ES24.16,A,I18)') &
+       'VERIFY_V7_FDERIVS_ZERO_INIT ex=',ex,' symmetry=',symmetry,' SoA=',SoA, &
+       ' max_abs=',v7_max_abs,' max_rel=',v7_max_rel,' mismatch_count=',v7_mismatch
+#endif
 
   return
 
@@ -1940,6 +2079,298 @@
 
   end subroutine fddyz
 
+!-----------------------------------------------------------------------------
+!
+! Fused first derivatives for the three shift components.
+!
+  subroutine fderivs_shift3(ex,betax,betay,betaz, &
+       betaxx,betaxy,betaxz,betayx,betayy,betayz, &
+       betazx,betazy,betazz,X,Y,Z,symmetry,onoff)
+  implicit none
+
+  integer,                               intent(in ):: ex(1:3),symmetry,onoff
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(in ):: betax,betay,betaz
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(out):: betaxx,betaxy,betaxz
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(out):: betayx,betayy,betayz
+  real*8,  dimension(ex(1),ex(2),ex(3)), intent(out):: betazx,betazy,betazz
+  real*8,                                intent(in) :: X(ex(1)),Y(ex(2)),Z(ex(3))
+
+  real*8 :: dX,dY,dZ
+  real*8,dimension(-1:ex(1),-1:ex(2),-1:ex(3)) :: fhx,fhy,fhz
+  real*8, dimension(3) :: SoA
+  integer :: imin,jmin,kmin,imax,jmax,kmax,i,j,k
+  real*8 :: d12dx,d12dy,d12dz,d2dx,d2dy,d2dz
+  integer, parameter :: NO_SYMM = 0, EQ_SYMM = 1
+  real*8,  parameter :: ZEO=0.d0,ONE=1.d0
+  real*8,  parameter :: TWO=2.d0,EIT=8.d0,F12=1.2d1
+
+  dX = X(2)-X(1)
+  dY = Y(2)-Y(1)
+  dZ = Z(2)-Z(1)
+
+  imax = ex(1)
+  jmax = ex(2)
+  kmax = ex(3)
+
+  imin = 1
+  jmin = 1
+  kmin = 1
+  if(Symmetry > NO_SYMM .and. dabs(Z(1)) < dZ) kmin = -1
+  if(Symmetry > EQ_SYMM .and. dabs(X(1)) < dX) imin = -1
+  if(Symmetry > EQ_SYMM .and. dabs(Y(1)) < dY) jmin = -1
+
+  SoA = (/ -ONE, ONE, ONE /)
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,betax,fhx,SoA)
+#else
+  call symmetry_bd(2,ex,betax,fhx,SoA)
+#endif
+  SoA = (/ ONE, -ONE, ONE /)
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,betay,fhy,SoA)
+#else
+  call symmetry_bd(2,ex,betay,fhy,SoA)
+#endif
+  SoA = (/ ONE, ONE, -ONE /)
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,betaz,fhz,SoA)
+#else
+  call symmetry_bd(2,ex,betaz,fhz,SoA)
+#endif
+
+  d12dx = ONE/F12/dX
+  d12dy = ONE/F12/dY
+  d12dz = ONE/F12/dZ
+
+  d2dx = ONE/TWO/dX
+  d2dy = ONE/TWO/dY
+  d2dz = ONE/TWO/dZ
+
+  betaxx = ZEO
+  betaxy = ZEO
+  betaxz = ZEO
+  betayx = ZEO
+  betayy = ZEO
+  betayz = ZEO
+  betazx = ZEO
+  betazy = ZEO
+  betazz = ZEO
+
+  do k=3,ex(3)-2
+  do j=3,ex(2)-2
+  do i=3,ex(1)-2
+      betaxx(i,j,k)=d12dx*(fhx(i-2,j,k)-EIT*fhx(i-1,j,k) &
+                           +EIT*fhx(i+1,j,k)-fhx(i+2,j,k))
+      betaxy(i,j,k)=d12dy*(fhx(i,j-2,k)-EIT*fhx(i,j-1,k) &
+                           +EIT*fhx(i,j+1,k)-fhx(i,j+2,k))
+      betaxz(i,j,k)=d12dz*(fhx(i,j,k-2)-EIT*fhx(i,j,k-1) &
+                           +EIT*fhx(i,j,k+1)-fhx(i,j,k+2))
+      betayx(i,j,k)=d12dx*(fhy(i-2,j,k)-EIT*fhy(i-1,j,k) &
+                           +EIT*fhy(i+1,j,k)-fhy(i+2,j,k))
+      betayy(i,j,k)=d12dy*(fhy(i,j-2,k)-EIT*fhy(i,j-1,k) &
+                           +EIT*fhy(i,j+1,k)-fhy(i,j+2,k))
+      betayz(i,j,k)=d12dz*(fhy(i,j,k-2)-EIT*fhy(i,j,k-1) &
+                           +EIT*fhy(i,j,k+1)-fhy(i,j,k+2))
+      betazx(i,j,k)=d12dx*(fhz(i-2,j,k)-EIT*fhz(i-1,j,k) &
+                           +EIT*fhz(i+1,j,k)-fhz(i+2,j,k))
+      betazy(i,j,k)=d12dy*(fhz(i,j-2,k)-EIT*fhz(i,j-1,k) &
+                           +EIT*fhz(i,j+1,k)-fhz(i,j+2,k))
+      betazz(i,j,k)=d12dz*(fhz(i,j,k-2)-EIT*fhz(i,j,k-1) &
+                           +EIT*fhz(i,j,k+1)-fhz(i,j,k+2))
+  enddo
+  enddo
+  enddo
+
+  do k=1,ex(3)-1
+  do j=1,ex(2)-1
+  do i=1,ex(1)-1
+    if(i>=3 .and. i<=ex(1)-2 .and. &
+       j>=3 .and. j<=ex(2)-2 .and. &
+       k>=3 .and. k<=ex(3)-2) cycle
+
+    if(i+2 <= imax .and. i-2 >= imin .and. &
+       j+2 <= jmax .and. j-2 >= jmin .and. &
+       k+2 <= kmax .and. k-2 >= kmin) then
+      betaxx(i,j,k)=d12dx*(fhx(i-2,j,k)-EIT*fhx(i-1,j,k)+EIT*fhx(i+1,j,k)-fhx(i+2,j,k))
+      betaxy(i,j,k)=d12dy*(fhx(i,j-2,k)-EIT*fhx(i,j-1,k)+EIT*fhx(i,j+1,k)-fhx(i,j+2,k))
+      betaxz(i,j,k)=d12dz*(fhx(i,j,k-2)-EIT*fhx(i,j,k-1)+EIT*fhx(i,j,k+1)-fhx(i,j,k+2))
+      betayx(i,j,k)=d12dx*(fhy(i-2,j,k)-EIT*fhy(i-1,j,k)+EIT*fhy(i+1,j,k)-fhy(i+2,j,k))
+      betayy(i,j,k)=d12dy*(fhy(i,j-2,k)-EIT*fhy(i,j-1,k)+EIT*fhy(i,j+1,k)-fhy(i,j+2,k))
+      betayz(i,j,k)=d12dz*(fhy(i,j,k-2)-EIT*fhy(i,j,k-1)+EIT*fhy(i,j,k+1)-fhy(i,j,k+2))
+      betazx(i,j,k)=d12dx*(fhz(i-2,j,k)-EIT*fhz(i-1,j,k)+EIT*fhz(i+1,j,k)-fhz(i+2,j,k))
+      betazy(i,j,k)=d12dy*(fhz(i,j-2,k)-EIT*fhz(i,j-1,k)+EIT*fhz(i,j+1,k)-fhz(i,j+2,k))
+      betazz(i,j,k)=d12dz*(fhz(i,j,k-2)-EIT*fhz(i,j,k-1)+EIT*fhz(i,j,k+1)-fhz(i,j,k+2))
+    elseif(i+1 <= imax .and. i-1 >= imin .and. &
+           j+1 <= jmax .and. j-1 >= jmin .and. &
+           k+1 <= kmax .and. k-1 >= kmin) then
+      betaxx(i,j,k)=d2dx*(-fhx(i-1,j,k)+fhx(i+1,j,k))
+      betaxy(i,j,k)=d2dy*(-fhx(i,j-1,k)+fhx(i,j+1,k))
+      betaxz(i,j,k)=d2dz*(-fhx(i,j,k-1)+fhx(i,j,k+1))
+      betayx(i,j,k)=d2dx*(-fhy(i-1,j,k)+fhy(i+1,j,k))
+      betayy(i,j,k)=d2dy*(-fhy(i,j-1,k)+fhy(i,j+1,k))
+      betayz(i,j,k)=d2dz*(-fhy(i,j,k-1)+fhy(i,j,k+1))
+      betazx(i,j,k)=d2dx*(-fhz(i-1,j,k)+fhz(i+1,j,k))
+      betazy(i,j,k)=d2dy*(-fhz(i,j-1,k)+fhz(i,j+1,k))
+      betazz(i,j,k)=d2dz*(-fhz(i,j,k-1)+fhz(i,j,k+1))
+    endif
+  enddo
+  enddo
+  enddo
+
+  return
+
+  end subroutine fderivs_shift3
+
+!-----------------------------------------------------------------------------
+! V7-1: fuse the shift second-derivative producer with its two consumers.
+! All 18 derivatives produced by three fdderivs calls are still evaluated,
+! but only the six contracted full-grid results are stored.
+!-----------------------------------------------------------------------------
+  subroutine fdderivs_shift_fusion(ex,betax,betay,betaz, &
+       gupxx,gupxy,gupxz,gupyy,gupyz,gupzz, &
+       gradx,grady,gradz,lapx,lapy,lapz,X,Y,Z,symmetry,onoff)
+  implicit none
+
+  integer, intent(in) :: ex(1:3),symmetry,onoff
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(in) :: betax,betay,betaz
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(in) :: gupxx,gupxy,gupxz
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(in) :: gupyy,gupyz,gupzz
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(out) :: gradx,grady,gradz
+  real*8, dimension(ex(1),ex(2),ex(3)), intent(out) :: lapx,lapy,lapz
+  real*8, intent(in) :: X(ex(1)),Y(ex(2)),Z(ex(3))
+
+  real*8, dimension(-1:ex(1),-1:ex(2),-1:ex(3)) :: fhx,fhy,fhz
+  real*8, dimension(3) :: SoA
+  real*8 :: dX,dY,dZ
+  real*8 :: Sdxdx,Sdydy,Sdzdz,Sdxdy,Sdxdz,Sdydz
+  real*8 :: Fdxdx,Fdydy,Fdzdz,Fdxdy,Fdxdz,Fdydz
+  real*8 :: bx_xx,bx_xy,bx_xz,bx_yy,bx_yz,bx_zz
+  real*8 :: by_xx,by_xy,by_xz,by_yy,by_yz,by_zz
+  real*8 :: bz_xx,bz_xy,bz_xz,bz_yy,bz_yz,bz_zz
+  integer :: imin,jmin,kmin,imax,jmax,kmax,i,j,k
+  integer, parameter :: NO_SYMM=0, EQ_SYMM=1
+  real*8, parameter :: ZEO=0.d0, ONE=1.d0, TWO=2.d0
+  real*8, parameter :: F1o4=2.5d-1, F8=8.d0, F16=1.6d1, F30=3.d1
+  real*8, parameter :: F1o12=ONE/1.2d1, F1o144=ONE/1.44d2
+
+  dX=X(2)-X(1)
+  dY=Y(2)-Y(1)
+  dZ=Z(2)-Z(1)
+  imax=ex(1)
+  jmax=ex(2)
+  kmax=ex(3)
+  imin=1
+  jmin=1
+  kmin=1
+  if(symmetry > NO_SYMM .and. dabs(Z(1)) < dZ) kmin=-1
+  if(symmetry > EQ_SYMM .and. dabs(X(1)) < dX) imin=-1
+  if(symmetry > EQ_SYMM .and. dabs(Y(1)) < dY) jmin=-1
+
+  SoA=(/-ONE,ONE,ONE/)
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,betax,fhx,SoA)
+#else
+  call symmetry_bd(2,ex,betax,fhx,SoA)
+#endif
+  SoA=(/ONE,-ONE,ONE/)
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,betay,fhy,SoA)
+#else
+  call symmetry_bd(2,ex,betay,fhy,SoA)
+#endif
+  SoA=(/ONE,ONE,-ONE/)
+#if defined(Cell) && !defined(Vertex)
+  call symmetry_bd_deriv_fast(2,ex,betaz,fhz,SoA)
+#else
+  call symmetry_bd(2,ex,betaz,fhz,SoA)
+#endif
+
+  Sdxdx=ONE/(dX*dX)
+  Sdydy=ONE/(dY*dY)
+  Sdzdz=ONE/(dZ*dZ)
+  Sdxdy=F1o4/(dX*dY)
+  Sdxdz=F1o4/(dX*dZ)
+  Sdydz=F1o4/(dY*dZ)
+  Fdxdx=F1o12/(dX*dX)
+  Fdydy=F1o12/(dY*dY)
+  Fdzdz=F1o12/(dZ*dZ)
+  Fdxdy=F1o144/(dX*dY)
+  Fdxdz=F1o144/(dX*dZ)
+  Fdydz=F1o144/(dY*dZ)
+
+  gradx=ZEO
+  grady=ZEO
+  gradz=ZEO
+  lapx=ZEO
+  lapy=ZEO
+  lapz=ZEO
+  do k=1,ex(3)-1
+  do j=1,ex(2)-1
+  do i=1,ex(1)-1
+    call fd2_at_point(fhx,bx_xx,bx_xy,bx_xz,bx_yy,bx_yz,bx_zz)
+    call fd2_at_point(fhy,by_xx,by_xy,by_xz,by_yy,by_yz,by_zz)
+    call fd2_at_point(fhz,bz_xx,bz_xy,bz_xz,bz_yy,bz_yz,bz_zz)
+
+    gradx(i,j,k)=bx_xx+by_xy+bz_xz
+    grady(i,j,k)=bx_xy+by_yy+bz_yz
+    gradz(i,j,k)=bx_xz+by_yz+bz_zz
+    lapx(i,j,k)=gupxx(i,j,k)*bx_xx+gupyy(i,j,k)*bx_yy+gupzz(i,j,k)*bx_zz+ &
+         TWO*(gupxy(i,j,k)*bx_xy+gupxz(i,j,k)*bx_xz+gupyz(i,j,k)*bx_yz)
+    lapy(i,j,k)=gupxx(i,j,k)*by_xx+gupyy(i,j,k)*by_yy+gupzz(i,j,k)*by_zz+ &
+         TWO*(gupxy(i,j,k)*by_xy+gupxz(i,j,k)*by_xz+gupyz(i,j,k)*by_yz)
+    lapz(i,j,k)=gupxx(i,j,k)*bz_xx+gupyy(i,j,k)*bz_yy+gupzz(i,j,k)*bz_zz+ &
+         TWO*(gupxy(i,j,k)*bz_xy+gupxz(i,j,k)*bz_xz+gupyz(i,j,k)*bz_yz)
+  enddo
+  enddo
+  enddo
+
+  return
+
+  contains
+
+  subroutine fd2_at_point(fh,fxx,fxy,fxz,fyy,fyz,fzz)
+  implicit none
+  real*8, dimension(-1:ex(1),-1:ex(2),-1:ex(3)), intent(in) :: fh
+  real*8, intent(out) :: fxx,fxy,fxz,fyy,fyz,fzz
+
+  fxx=ZEO
+  fxy=ZEO
+  fxz=ZEO
+  fyy=ZEO
+  fyz=ZEO
+  fzz=ZEO
+
+  if(i+2 <= imax .and. i-2 >= imin .and. &
+     j+2 <= jmax .and. j-2 >= jmin .and. &
+     k+2 <= kmax .and. k-2 >= kmin) then
+    fxx=Fdxdx*(-fh(i-2,j,k)+F16*fh(i-1,j,k)-F30*fh(i,j,k)-fh(i+2,j,k)+F16*fh(i+1,j,k))
+    fyy=Fdydy*(-fh(i,j-2,k)+F16*fh(i,j-1,k)-F30*fh(i,j,k)-fh(i,j+2,k)+F16*fh(i,j+1,k))
+    fzz=Fdzdz*(-fh(i,j,k-2)+F16*fh(i,j,k-1)-F30*fh(i,j,k)-fh(i,j,k+2)+F16*fh(i,j,k+1))
+    fxy=Fdxdy*((fh(i-2,j-2,k)-F8*fh(i-1,j-2,k)+F8*fh(i+1,j-2,k)-fh(i+2,j-2,k)) &
+          -F8*(fh(i-2,j-1,k)-F8*fh(i-1,j-1,k)+F8*fh(i+1,j-1,k)-fh(i+2,j-1,k)) &
+          +F8*(fh(i-2,j+1,k)-F8*fh(i-1,j+1,k)+F8*fh(i+1,j+1,k)-fh(i+2,j+1,k)) &
+              -(fh(i-2,j+2,k)-F8*fh(i-1,j+2,k)+F8*fh(i+1,j+2,k)-fh(i+2,j+2,k)))
+    fxz=Fdxdz*((fh(i-2,j,k-2)-F8*fh(i-1,j,k-2)+F8*fh(i+1,j,k-2)-fh(i+2,j,k-2)) &
+          -F8*(fh(i-2,j,k-1)-F8*fh(i-1,j,k-1)+F8*fh(i+1,j,k-1)-fh(i+2,j,k-1)) &
+          +F8*(fh(i-2,j,k+1)-F8*fh(i-1,j,k+1)+F8*fh(i+1,j,k+1)-fh(i+2,j,k+1)) &
+              -(fh(i-2,j,k+2)-F8*fh(i-1,j,k+2)+F8*fh(i+1,j,k+2)-fh(i+2,j,k+2)))
+    fyz=Fdydz*((fh(i,j-2,k-2)-F8*fh(i,j-1,k-2)+F8*fh(i,j+1,k-2)-fh(i,j+2,k-2)) &
+          -F8*(fh(i,j-2,k-1)-F8*fh(i,j-1,k-1)+F8*fh(i,j+1,k-1)-fh(i,j+2,k-1)) &
+          +F8*(fh(i,j-2,k+1)-F8*fh(i,j-1,k+1)+F8*fh(i,j+1,k+1)-fh(i,j+2,k+1)) &
+              -(fh(i,j-2,k+2)-F8*fh(i,j-1,k+2)+F8*fh(i,j+1,k+2)-fh(i,j+2,k+2)))
+  elseif(i+1 <= imax .and. i-1 >= imin .and. &
+         j+1 <= jmax .and. j-1 >= jmin .and. &
+         k+1 <= kmax .and. k-1 >= kmin) then
+    fxx=Sdxdx*(fh(i-1,j,k)-TWO*fh(i,j,k)+fh(i+1,j,k))
+    fyy=Sdydy*(fh(i,j-1,k)-TWO*fh(i,j,k)+fh(i,j+1,k))
+    fzz=Sdzdz*(fh(i,j,k-1)-TWO*fh(i,j,k)+fh(i,j,k+1))
+    fxy=Sdxdy*(fh(i-1,j-1,k)-fh(i+1,j-1,k)-fh(i-1,j+1,k)+fh(i+1,j+1,k))
+    fxz=Sdxdz*(fh(i-1,j,k-1)-fh(i+1,j,k-1)-fh(i-1,j,k+1)+fh(i+1,j,k+1))
+    fyz=Sdydz*(fh(i,j-1,k-1)-fh(i,j+1,k-1)-fh(i,j-1,k+1)+fh(i,j+1,k+1))
+  endif
+  end subroutine fd2_at_point
+
+  end subroutine fdderivs_shift_fusion
 #elif (ghost_width == 4)
 ! sixth order code
 

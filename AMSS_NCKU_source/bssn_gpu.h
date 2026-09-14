@@ -9,6 +9,11 @@
 #define GRID_DIM 256
 #define BLOCK_DIM 128
 
+/* Set to 0 at compile time to retain the original per-call allocation path. */
+#ifndef GPU_PERSISTENT_RHS_CONTEXT
+#define GPU_PERSISTENT_RHS_CONTEXT 1
+#endif
+
 #define _FH2_(i, j, k) fh[(i) + (j) * _1D_SIZE[2] + (k) * _2D_SIZE[2]]
 #define _FH3_(i, j, k) fh[(i) + (j) * _1D_SIZE[3] + (k) * _2D_SIZE[3]]
 #define pow2(x) ((x) * (x))
@@ -66,6 +71,14 @@ int gpu_rhs(int calledby, int mpi_rank, int *ex, double &T,
             int &Symmetry, int &Lev, double &eps, int &co);
 
 int gpu_rhs_ss(RHS_SS_PARA);
+
+/* V1a lifecycle hooks.  Shape contexts are also released at normal exit. */
+void gpu_rhs_context_destroy(int nx, int ny, int nz);
+void gpu_rhs_context_destroy_all(void);
+
+/* V1b: CUDA equivalent of rungekutta4_rout for one of the 24 state fields. */
+int gpu_rungekutta4_rout(int *ex, double dT, double *f0, double *f1,
+                         double *f_rhs, int RK4, int variable_index);
 
 /** Init GPU side data in GPUMeta. */
 // void init_fluid_meta_gpu(GPUMeta *gpu_meta);
