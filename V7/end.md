@@ -24,9 +24,21 @@
 
 ## 3. V5：系统排除高风险方向
 
-V5 先后检查了 metric temporary、SIMD、RK fusion、`prolong3`、MPI cache、RHS fusion 和 OpenMP 等方向。若干方案在静态分析上能够减少 pass、temporary 或调用次数，但实测没有稳定收益，部分方案明显变慢，因此没有作为最终生产优化保留。
+## V5：MPI 并行配置与绑核优化
 
-V5 的主要价值是建立了以完整运行结果判断优化的原则，并逐步固定 8-rank MPI 运行方式、hwloc workaround 和 binding 方法。它也证明 pass 数量减少并不自动转化为更好的缓存、向量化或机器码。V5 相对最终 baseline 的统一加速比为 1.208×。
+V5 阶段的重点从单纯修改计算内核，逐渐转向对程序整体并行运行方式进行优化。
+
+前期测试中发现，AMSS-NCKU 的运行性能不仅取决于单个计算 kernel 的效率，还明显受到 MPI 进程数量、CPU 核心分配方式以及进程调度稳定性的影响。由于程序中包含大量网格计算、插值和 MPI 通信，如果 MPI rank 数量设置不合理，或者进程在不同 CPU 核心之间频繁迁移，会导致计算资源利用率下降，同时增加缓存失效和调度开销。
+
+因此，V5 阶段对 MPI 运行配置进行了重新测试和调整，最终将主要运行方式优化为：
+
+```bash
+HWLOC_COMPONENTS=-gl mpirun -np 8 \
+  --use-hwthread-cpus \
+  --map-by ppr:1:core \
+  --bind-to hwthread \
+  ./ABE
+V5 相对最终 baseline 的统一加速比为 1.208×。
 
 ## 4. V6：MassPAng 插值与通信优化
 
