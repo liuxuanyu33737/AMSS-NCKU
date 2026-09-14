@@ -37,7 +37,7 @@ HWLOC_COMPONENTS=-gl mpirun -np 8 \
   --use-hwthread-cpus \
   --map-by ppr:1:core \
   --bind-to hwthread \
-  ./ABE\
+  ./ABE\\\
 
 V5 相对最终 baseline 的统一加速比为 1.208×。
 
